@@ -18,7 +18,6 @@ namespace Graphics
 		VulkanApplication();
 
 		void Run();
-
 	private:
 		std::unique_ptr<VulkanApplicationImpl, VulkanApplicationImplDeleter> _impl;
 	};

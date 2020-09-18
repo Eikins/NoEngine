@@ -6,6 +6,8 @@
 #include <iostream>
 #include <stdexcept>
 #include <cstdlib>
+#include <vector>
+#include <cstring>
 
 static void glfwError(int id, const char* description)
 {
@@ -17,6 +19,16 @@ namespace Graphics {
 	public:
 		void Run();
 	private:
+		const std::vector<const char*> kValidationLayers = {
+			"VK_LAYER_KHRONOS_validation"
+		};
+
+#ifndef NDEBUG
+		const bool kEnableValidationLayers = false;
+#else
+		const bool kEnableValidationLayers = true;
+#endif // NDEBUG
+
 		GLFWwindow *_window;
 		VkInstance _instance;
 
@@ -26,6 +38,7 @@ namespace Graphics {
 		void Cleanup();
 
 		void CreateInstance();
+		bool CheckValidationLayerSupport();
 	};
 }
 
@@ -68,7 +81,7 @@ void Graphics::VulkanApplicationImpl::InitVulkan()
 
 void Graphics::VulkanApplicationImpl::MainLoop()
 {
-	while (!glfwWindowShouldClose(_window))
+	while (glfwWindowShouldClose(_window) == false)
 	{
 		glfwPollEvents();
 	}
@@ -85,6 +98,10 @@ void Graphics::VulkanApplicationImpl::Cleanup()
 #pragma region Vulkan Initialisation
 void Graphics::VulkanApplicationImpl::CreateInstance()
 {
+	if (kEnableValidationLayers && CheckValidationLayerSupport() == false) {
+		throw std::runtime_error("Validation layers requested, but not available!");
+	}
+
 	VkApplicationInfo appInfo{};
 	appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
 	appInfo.pApplicationName = "NoEngine";
@@ -105,10 +122,46 @@ void Graphics::VulkanApplicationImpl::CreateInstance()
 	createInfo.pApplicationInfo = &appInfo;
 	createInfo.enabledExtensionCount = glfwExtensionCount;
 	createInfo.ppEnabledExtensionNames = glfwExtensions;
-	createInfo.enabledLayerCount = 0;
+
+	// Validation layers
+	if (kEnableValidationLayers)
+	{
+		createInfo.enabledLayerCount = static_cast<uint32_t>(kValidationLayers.size());
+		createInfo.ppEnabledLayerNames = kValidationLayers.data();
+	}
+	else
+	{
+		createInfo.enabledLayerCount = 0;
+	}
 
 	if (vkCreateInstance(&createInfo, nullptr, &_instance) != VK_SUCCESS) {
 		throw std::runtime_error("Failed to create a Vulkan instance!");
 	}
+}
+
+bool Graphics::VulkanApplicationImpl::CheckValidationLayerSupport()
+{
+	uint32_t layerCount;
+	vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
+
+	std::vector<VkLayerProperties> availableLayers(layerCount);
+	vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
+
+	for (const char* layerName : kValidationLayers) {
+		bool layerFound = false;
+
+		for (const auto& layerProperties : availableLayers) {
+			if (strcmp(layerName, layerProperties.layerName) == 0) {
+				layerFound = true;
+				break;
+			}
+		}
+
+		if (!layerFound) {
+			return false;
+		}
+	}
+
+	return true;
 }
 #pragma endregion
