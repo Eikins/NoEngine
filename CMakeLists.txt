@@ -9,10 +9,10 @@ project ("NoEngine")
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/CMake/Modules")
 
 # Set the C++ Version
-message("!REQUIRED! -- Supported features = ${cxx_std_14}")
+message("!REQUIRED! -- Supported features = ${cxx_std_17}")
 message("Supported features = ${cxx_std_17}")
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
