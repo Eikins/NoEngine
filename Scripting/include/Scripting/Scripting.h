@@ -1,3 +1,8 @@
 #pragma once
 
-void Script();
+namespace Scripting
+{
+
+}
+
+void TestMono();

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <glm/glm.hpp>
 
 namespace Graphics
 {
@@ -20,5 +21,6 @@ namespace Graphics
 		void Run();
 	private:
 		std::unique_ptr<VulkanApplicationImpl, VulkanApplicationImplDeleter> _impl;
+		glm::vec3 vec3;
 	};
 }
