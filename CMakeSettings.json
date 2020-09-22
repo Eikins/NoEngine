@@ -14,7 +14,7 @@
 			"variables": [
 				{
 					"name": "CMAKE_TOOLCHAIN_FILE",
-					"value": "C:\\dev\\vcpkg\\scripts\\buildsystems\\vcpkg.cmake"
+					"value": "D:\\Dev\\Tools\\vcpkg\\scripts\\buildsystems\\vcpkg.cmake"
 				}
 			],
 			"ctestCommandArgs": ""
