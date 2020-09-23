@@ -24,4 +24,4 @@ add_subdirectory ("Scripting")
 add_subdirectory ("Graphics")
 add_subdirectory ("Core")
 
-add_custom_target(Update-Assets COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/Assets ${CMAKE_BINARY_DIR}/Assets)
+add_custom_target(Update-Assets ALL COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/Assets ${CMAKE_BINARY_DIR}/Assets)

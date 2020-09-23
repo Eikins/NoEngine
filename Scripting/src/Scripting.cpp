@@ -25,7 +25,7 @@ void TestMono()
 	lua_State *L = luaL_newstate();
 	luaL_openlibs(L);
 
-	if (CheckLua(L, luaL_dofile(L, "..\\Assets\\Scripts\\Test.lua")))
+	if (CheckLua(L, luaL_dofile(L, "Scripts\\Test.lua")))
 	{
 		lua_getglobal(L, "a");
 		if (lua_isnumber(L, -1))

@@ -3,18 +3,18 @@
 
 #include "NoEngine.h"
 #include "Scripting/Scripting.h"
-#include "Graphics/VulkanApplication.h"
+#include "Graphics/VulkanRendering/VulkanApplication.h"
 
 using namespace std;
 
 int main()
 {
-	// Graphics::VulkanApplication app;
+	Graphics::VulkanApplication app;
 
 	try
 	{
 		TestMono();
-		// app.Run();
+		app.Run();
 	}
 	catch (const std::exception &e)
 	{

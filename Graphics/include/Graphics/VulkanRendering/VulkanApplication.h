@@ -21,6 +21,5 @@ namespace Graphics
 		void Run();
 	private:
 		std::unique_ptr<VulkanApplicationImpl, VulkanApplicationImplDeleter> _impl;
-		glm::vec3 vec3;
 	};
 }

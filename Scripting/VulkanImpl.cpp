@@ -1,4 +1,4 @@
-#include "Graphics/VulkanApplication.h"
+#include "Graphics/VulkanRendering/VulkanApplication.h"
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
@@ -12,6 +12,7 @@
 #include <set>
 #include <cstdint>
 #include <algorithm>
+#include <fstream>
 
 namespace Graphics {
 	struct QueueFamilyIndices
@@ -62,7 +63,11 @@ namespace Graphics {
 		VkQueue _graphicsQueue = VK_NULL_HANDLE;
 		VkQueue _presentQueue = VK_NULL_HANDLE;
 
-		VkSwapchainKHR _swapchain = VK_NULL_HANDLE;
+		VkSwapchainKHR _swapChain = VK_NULL_HANDLE;
+		std::vector<VkImage> _swapChainImages;
+		std::vector<VkImageView> _swapChainImageViews;
+		VkFormat _swapChainImageFormat;
+		VkExtent2D _swapChainExtent;
 
 		void InitWindow();
 		void InitVulkan();
@@ -74,7 +79,10 @@ namespace Graphics {
 		void CreateInstance();
 		void CreateSurface();
 		void CreateLogicalDevice();
-		void CreateSwapchain();
+		void CreateSwapChain();
+		void CreateImageViews();
+		void CreateGraphicsPipeline();
+		VkShaderModule CreateShaderModule(const std::vector<char>& code);
 
 		void SetupDebugMessenger();
 		void PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT &createInfo);
@@ -136,6 +144,25 @@ void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT
 }
 #pragma endregion
 
+std::vector<char> ReadFile(const std::string& filename)
+{
+	std::ifstream file(filename, std::ios::ate | std::ios::binary);
+
+	if (file.is_open() == false)
+	{
+		throw std::runtime_error("Failed to open file");
+	}
+
+	size_t fileSize = (size_t)file.tellg();
+	std::vector<char>buffer(fileSize);
+
+	file.seekg(0);
+	file.read(buffer.data(), fileSize);
+	file.close();
+
+	return buffer;
+}
+
 void Graphics::VulkanApplicationImplDeleter::operator()(VulkanApplicationImpl* impl) {
 	delete impl;
 }
@@ -174,7 +201,9 @@ void Graphics::VulkanApplicationImpl::InitVulkan()
 	CreateSurface();
 	PickPhysicalDevice();
 	CreateLogicalDevice();
-	CreateSwapchain();
+	CreateSwapChain();
+	CreateImageViews();
+	CreateGraphicsPipeline();
 }
 
 void Graphics::VulkanApplicationImpl::MainLoop()
@@ -192,7 +221,12 @@ void Graphics::VulkanApplicationImpl::Cleanup()
 		DestroyDebugUtilsMessengerEXT(_instance, _debugMessenger, nullptr);
 	}
 
-	vkDestroySwapchainKHR(_device, _swapchain, nullptr);
+	for (auto imageView : _swapChainImageViews)
+	{
+		vkDestroyImageView(_device, imageView, nullptr);
+	}
+
+	vkDestroySwapchainKHR(_device, _swapChain, nullptr);
 	vkDestroyDevice(_device, nullptr);
 	vkDestroySurfaceKHR(_instance, _surface, nullptr);
 	vkDestroyInstance(_instance, nullptr);
@@ -558,7 +592,7 @@ void Graphics::VulkanApplicationImpl::CreateLogicalDevice()
 	vkGetDeviceQueue(_device, indices.presentFamily.value(), 0, &_presentQueue);
 }
 
-void Graphics::VulkanApplicationImpl::CreateSwapchain()
+void Graphics::VulkanApplicationImpl::CreateSwapChain()
 {
 	SwapchainSupportDetails swapchainSupportDetails = QuerySwapchainSupport(_physicalDevice);
 
@@ -607,9 +641,70 @@ void Graphics::VulkanApplicationImpl::CreateSwapchain()
 	createInfo.clipped = VK_TRUE;
 	createInfo.oldSwapchain = VK_NULL_HANDLE;
 
-	if (vkCreateSwapchainKHR(_device, &createInfo, nullptr, &_swapchain) != VK_SUCCESS)
+	if (vkCreateSwapchainKHR(_device, &createInfo, nullptr, &_swapChain) != VK_SUCCESS)
 	{
 		throw std::runtime_error("Failed to create Swapchain!");
 	}
+
+	vkGetSwapchainImagesKHR(_device, _swapChain, &imageCount, nullptr);
+	_swapChainImages.resize(imageCount);
+	vkGetSwapchainImagesKHR(_device, _swapChain, &imageCount, _swapChainImages.data());
+
+	_swapChainImageFormat = surfaceFormat.format;
+	_swapChainExtent = extent;
 }
+
+void Graphics::VulkanApplicationImpl::CreateImageViews()
+{
+	_swapChainImageViews.resize(_swapChainImages.size());
+	for (size_t i = 0; i < _swapChainImages.size(); i++)
+	{
+		VkImageViewCreateInfo createInfo{};
+		createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+		createInfo.image = _swapChainImages[i];
+		createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+		createInfo.format = _swapChainImageFormat;
+		createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+		createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+		createInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+		createInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+		createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		createInfo.subresourceRange.baseMipLevel = 0;
+		createInfo.subresourceRange.levelCount = 1;
+		createInfo.subresourceRange.baseArrayLayer = 0;
+		createInfo.subresourceRange.layerCount = 1;
+
+		if (vkCreateImageView(_device, &createInfo, nullptr, &_swapChainImageViews[i]) != VK_SUCCESS)
+		{
+			throw std::runtime_error("Failed to create an image view!");
+		}
+	}
+}
+
+void Graphics::VulkanApplicationImpl::CreateGraphicsPipeline()
+{
+	auto vertShaderCode = ReadFile("Shaders/SPIR-V/triangle.vert.spv");
+	auto fragShaderCode = ReadFile("Shaders/SPIR-V/triangle.frag.spv");
+
+	VkShaderModule vertShaderModule = CreateShaderModule(vertShaderCode);
+	VkShaderModule fragShaderModule = CreateShaderModule(fragShaderCode);
+
+	vkDestroyShaderModule(_device, fragShaderModule, nullptr);
+	vkDestroyShaderModule(_device, vertShaderModule, nullptr);
+}
+
+VkShaderModule Graphics::VulkanApplicationImpl::CreateShaderModule(const std::vector<char>& code)
+{
+	VkShaderModuleCreateInfo createInfo{};
+	createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+	createInfo.codeSize = code.size();
+	createInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
+	VkShaderModule shaderModule;
+	if (vkCreateShaderModule(_device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS)
+	{
+		throw std::runtime_error("Failed to create shader module!");
+	}
+	return shaderModule;
+}
+
 #pragma endregion
