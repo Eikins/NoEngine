@@ -1,5 +1,4 @@
-﻿// NoEngine.h : Include file for standard system include files,
-// or project specific include files.
+﻿// NoEngine.h : Include files for the engine.
 
 #pragma once
 

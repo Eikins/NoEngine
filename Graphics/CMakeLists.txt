@@ -2,14 +2,32 @@
 # project specific logic here.
 
 find_package(Vulkan REQUIRED)
+find_package(OpenGL REQUIRED)
+
+find_package(glew CONFIG REQUIRED)
 find_package(glfw3 CONFIG REQUIRED)
 find_package(glm CONFIG REQUIRED)
 
 # Add source to this project's executable.
-add_library(Graphics STATIC "../Scripting/VulkanImpl.cpp")
+add_library(Graphics STATIC 
+	"src/VulkanImpl.cpp"
+	"src/OpenGL/GLRenderDevice.cpp"
+)
 
-target_include_directories(Graphics PUBLIC ${CMAKE_CURRENT_LIST_DIR}/include "${Vulkan_INCLUDE_DIRS}")
-target_link_libraries(Graphics PUBLIC "${Vulkan_LIBRARIES}" glm glfw)
+target_include_directories(Graphics PUBLIC 
+	${CMAKE_CURRENT_LIST_DIR}/include 
+	${OPENGL_INCLUDE_DIR}
+	${Vulkan_INCLUDE_DIRS}
+	${GLEW_INCLUDE_DIR}
+)
+
+target_link_libraries(Graphics PUBLIC 
+	${OPENGL_LIBRARIES} 
+	${Vulkan_LIBRARIES} 
+	glm 
+	glfw
+	${GLEW_LIBRARY}
+)
 
 install(TARGETS Graphics 
 		LIBRARY DESTINATION lib 

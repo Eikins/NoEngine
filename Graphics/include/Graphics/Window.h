@@ -15,7 +15,6 @@ namespace Graphics
 	class Window
 	{
 	public:
-
 		static std::unique_ptr<Window> Create(const WindowDescriptor &descriptor);
 
 		virtual void SetTitle(const std::string &title) = 0;
