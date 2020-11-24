@@ -6,6 +6,7 @@ namespace Graphics
 {
 	class GLRenderDevice : public RenderDevice
 	{
-		virtual Buffer CreateBuffer(BufferDescriptor descriptor, BufferData data) override;
+		virtual std::unique_ptr<Window> CreateWindow(const WindowDescriptor& descriptor) override;
+		virtual std::unique_ptr<Buffer> CreateBuffer(const BufferDescriptor& descriptor, const BufferData &data) override;
 	};
 }

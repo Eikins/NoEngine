@@ -725,7 +725,7 @@ void Graphics::VulkanApplicationImpl::CreateGraphicsPipeline()
 	viewport.maxDepth = 1.0F;
 
 	VkRect2D scissor{};
-	scissor.offset = { 0.0F, 0.0F };
+	scissor.offset = { 0, 0 };
 	scissor.extent = _swapChainExtent;
 
 	VkPipelineViewportStateCreateInfo viewportState{};

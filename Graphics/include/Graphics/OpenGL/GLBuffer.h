@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../RenderDevice.h"
+#include "../Buffer.h"
 
 namespace Graphics
 {
@@ -8,5 +8,7 @@ namespace Graphics
 	{
 	public:
 		uint32_t GLID;
+
+		virtual uint32_t GetNativeHandle() override;
 	};
 }

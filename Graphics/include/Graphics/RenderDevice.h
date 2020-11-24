@@ -2,6 +2,7 @@
 
 #include "SwapChain.h"
 #include "Buffer.h"
+#include "Window.h"
 
 namespace Graphics
 {
@@ -9,9 +10,8 @@ namespace Graphics
 	{
 	public:
 		//virtual SwapChain CreateSwapChain() = 0;
+		virtual std::unique_ptr<Window> CreateWindow(const WindowDescriptor& descriptor) = 0;
 
-		virtual Buffer CreateBuffer(BufferDescriptor descriptor, BufferData data) = 0;
-
-
+		virtual std::unique_ptr<Buffer> CreateBuffer(const BufferDescriptor& descriptor, const BufferData& data) = 0;
 	};
 }

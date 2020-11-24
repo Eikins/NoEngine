@@ -15,9 +15,11 @@ namespace Graphics
 	class Window
 	{
 	public:
-		static std::unique_ptr<Window> Create(const WindowDescriptor &descriptor);
-
 		virtual void SetTitle(const std::string &title) = 0;
-		virtual std::string GetTitle() const = 0;
+
+		virtual bool ShouldClose() = 0;
+		virtual void PollEvents() = 0;
+
+		virtual void* GetNativeHandle() = 0;
 	};
 }

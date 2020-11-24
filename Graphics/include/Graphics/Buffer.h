@@ -19,6 +19,6 @@ namespace Graphics
 	class Buffer
 	{
 	public:
-		virtual int 
+		virtual uint32_t GetNativeHandle() = 0;
 	};
 }
