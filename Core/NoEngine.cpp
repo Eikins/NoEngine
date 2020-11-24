@@ -2,6 +2,7 @@
 //
 
 #include <chrono>
+#include <thread>
 
 #include "GL/glew.h"
 #include "GLFW/glfw3.h"
@@ -11,17 +12,19 @@
 #include "Graphics/Window.h"
 #include "Graphics/RenderDevice.h"
 #include "Graphics/Buffer.h"
+#include "Graphics/Shader.h"
 
 #include "Graphics/OpenGL/GLRenderDevice.h"
 #include "Graphics/OpenGL/GLWindow.h"
 
 using namespace std;
+using namespace Graphics;
 
 int main()
 {
 	std::unique_ptr<Graphics::RenderDevice> renderDevice = make_unique<Graphics::GLRenderDevice>();
 
-	Graphics::WindowDescriptor windowDescriptor;
+	WindowDescriptor windowDescriptor;
 	windowDescriptor.width = 800;
 	windowDescriptor.height = 600;
 	windowDescriptor.title = "NoEngine (OpenGL)";
@@ -43,24 +46,55 @@ int main()
 	};
 
 	GLfloat vertices[] = {
-		-1, 0, -1,
-		1, 0, -1,
-		0, 1, -1,
+		-1, 0, 0,
+		1, 0, 0,
+		0, 1, 0,
 	};
 
-	Graphics::BufferDescriptor triangleBufferDescriptor;
+	BufferDescriptor triangleBufferDescriptor;
 	triangleBufferDescriptor.size = 3;
 	triangleBufferDescriptor.stride = 3 * sizeof(float);
 
-	Graphics::BufferData triangleBufferData;
+	BufferData triangleBufferData;
 	triangleBufferData.size = 9;
 	triangleBufferData.data = &vertices;
+
+	// ==== SHADERS ====
+	ShaderDescriptor vertexDescriptor;
+	vertexDescriptor.shaderType = ShaderType::VERTEX;
+	ShaderCreationDescriptor vertexCreateInfo;
+	vertexCreateInfo.filename = "Shaders/GLSL/triangle.vert.glsl";
+	vertexCreateInfo.pDesc = &vertexDescriptor;
+
+	ShaderDescriptor fragDescriptor;
+	fragDescriptor.shaderType = ShaderType::PIXEL;
+	ShaderCreationDescriptor fragCreateInfo;
+	fragCreateInfo.filename = "Shaders/GLSL/triangle.frag.glsl";
+	fragCreateInfo.pDesc = &fragDescriptor;
 
 	try
 	{
 
 		auto window = renderDevice->CreateWindow(windowDescriptor);
-		//auto triangleBuffer = renderDevice->CreateBuffer(triangleBufferDescriptor, triangleBufferData);
+		auto vertexShader = renderDevice->CreateShader(vertexCreateInfo);
+		auto fragmentShader = renderDevice->CreateShader(fragCreateInfo);
+		auto triangleBuffer = renderDevice->CreateBuffer(triangleBufferDescriptor, triangleBufferData);
+
+
+		// Create a program
+		auto shaderProgram = glCreateProgram();
+		glAttachShader(shaderProgram, vertexShader->GetNativeHandle());
+		glAttachShader(shaderProgram, fragmentShader->GetNativeHandle());
+		glLinkProgram(shaderProgram);
+
+		// VAO...
+		GLuint vao;
+		glGenVertexArrays(1, &vao);
+		glBindVertexArray(vao);
+
+		auto positionAttribute = glGetAttribLocation(shaderProgram, "position");
+		glVertexAttribPointer(positionAttribute, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+		glEnableVertexAttribArray(positionAttribute);
 
 		glClearColor(0.1f, 0.1f, 0.1f, 0.0f);
 
@@ -71,14 +105,18 @@ int main()
 			// TODO : command queue
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+			glUseProgram(shaderProgram);
+			glBindVertexArray(vao);
 
-			glEnableClientState(GL_VERTEX_ARRAY);
-
-			//glBindBuffer(GL_ARRAY_BUFFER, triangleBuffer->GetNativeHandle());
-			glVertexPointer(3, GL_FLOAT, 0, vertices);
 			// Draw the triangle !
 			glDrawArrays(GL_TRIANGLES, 0, 3); // Starting from vertex 0; 3 vertices total -> 1 triangle
 
+			//glColor3f(1.0f, 0.0f, 0.0f);
+			//glBegin(GL_TRIANGLES);
+			//glVertex2f(-1.0f, 0.0f);
+			//glVertex2f(1.0f, 0.0f);
+			//glVertex2f(0.0f, 1.0f);
+			//glEnd();
 
 
 			glfwSwapBuffers(static_cast<GLFWwindow*>(window->GetNativeHandle()));
@@ -89,6 +127,15 @@ int main()
 			deltaTime = fs.count();
 			time += deltaTime;
 			lastFrameTimePoint = timePoint;
+
+
+			// 60 FPS fixed
+			if (deltaTime < 1.0f / 60.0f)
+			{
+				long sleepDuration = ((1.0f / 60.0f) - deltaTime) * 1000000000;
+				std::this_thread::sleep_for(std::chrono::nanoseconds(sleepDuration));
+				deltaTime = 1.0f / 60.0f;
+			}
 
 			window->PollEvents();
 		}

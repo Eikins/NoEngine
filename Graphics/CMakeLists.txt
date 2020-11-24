@@ -13,7 +13,9 @@ add_library(Graphics STATIC
 	"src/VulkanImpl.cpp"
 	"src/OpenGL/GLRenderDevice.cpp"
 	"src/OpenGL/GLWindow.cpp"
-  "src/OpenGL/GLBuffer.cpp")
+	"src/OpenGL/GLBuffer.cpp"
+	"src/OpenGL/GLShader.cpp"
+)
 
 target_include_directories(Graphics PUBLIC 
 	${CMAKE_CURRENT_LIST_DIR}/include 
