@@ -2,6 +2,8 @@
 
 #include <string>
 
+#include "DeviceObject.h"
+
 namespace Graphics
 {
 
@@ -18,7 +20,6 @@ namespace Graphics
 		DEFAULT
 	};
 
-
 	struct ShaderDescriptor
 	{
 		ShaderType shaderType;
@@ -32,9 +33,11 @@ namespace Graphics
 	};
 
 
-	class Shader
+	class Shader : public DeviceObject
 	{
+	protected:
+		ShaderDescriptor _descriptor;
 	public:
-		virtual uint32_t GetNativeHandle() = 0;
+		ShaderDescriptor GetDescriptor() { return _descriptor; }
 	};
 }

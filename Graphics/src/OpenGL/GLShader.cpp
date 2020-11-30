@@ -4,8 +4,13 @@
 
 namespace Graphics
 {
-	uint32_t GLShader::GetNativeHandle()
+	void GLShader::Release()
 	{
-		return GLID;
+		glDeleteShader(GLID);
+	}
+
+	void* GLShader::GetNativeHandle()
+	{
+		return &GLID;
 	}
 }

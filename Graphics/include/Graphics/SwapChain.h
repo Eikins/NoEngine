@@ -1,8 +1,10 @@
 #pragma once
 
+#include "DeviceObject.h"
+
 namespace Graphics
 {
-	class SwapChain
+	class SwapChain : public DeviceObject
 	{
 
 	};

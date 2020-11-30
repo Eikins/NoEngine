@@ -2,6 +2,8 @@
 
 #include <string>
 
+#include "DeviceObject.h"
+
 namespace Graphics
 {
 	struct WindowDescriptor
@@ -12,14 +14,16 @@ namespace Graphics
 		bool resizable = false;
 	};
 
-	class Window
+	class Window : public DeviceObject
 	{
+	protected:
+		WindowDescriptor _descriptor;
 	public:
 		virtual void SetTitle(const std::string &title) = 0;
 
 		virtual bool ShouldClose() = 0;
 		virtual void PollEvents() = 0;
 
-		virtual void* GetNativeHandle() = 0;
+		WindowDescriptor GetDescriptor() { return _descriptor; }
 	};
 }

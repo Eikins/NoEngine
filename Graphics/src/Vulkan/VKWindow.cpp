@@ -2,37 +2,37 @@
 
 #include <GLFW/glfw3.h>
 
-#include "Graphics/OpenGL/GLWindow.h"
+#include "Graphics/Vulkan/VKWindow.h"
 
 namespace Graphics
 {
-	void GLWindow::GLFWErrorCallback(int id, const char* description)
+	void VKWindow::GLFWErrorCallback(int id, const char* description)
 	{
 		std::cerr << description << std::endl;
 	}
 
-	void GLWindow::SetTitle(const std::string& title)
+	void VKWindow::SetTitle(const std::string& title)
 	{
 		_descriptor.title = title;
 		glfwSetWindowTitle(static_cast<GLFWwindow*>(_handle), title.c_str());
 	}
 
-	bool GLWindow::ShouldClose()
+	bool VKWindow::ShouldClose()
 	{
 		return glfwWindowShouldClose(static_cast<GLFWwindow*>(_handle));
 	}
 
-	void GLWindow::PollEvents()
+	void VKWindow::PollEvents()
 	{
 		glfwPollEvents();
 	}
 
-	void GLWindow::Release()
+	void VKWindow::Release()
 	{
 		glfwDestroyWindow(_handle);
 	}
 
-	void* GLWindow::GetNativeHandle()
+	void* VKWindow::GetNativeHandle()
 	{
 		return _handle;
 	}

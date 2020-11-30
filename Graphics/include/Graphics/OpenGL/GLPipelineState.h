@@ -1,13 +1,15 @@
 #pragma once
 
-#include "Graphics/Shader.h"
+#include "Graphics/PipelineState.h"
 
 namespace Graphics
 {
-	class GLShader : public Shader
+	class GLPipelineState : public PipelineState
 	{
 	public:
 		uint32_t GLID;
+
+		void Bind();
 
 		virtual void Release() override;
 		virtual void* GetNativeHandle() override;

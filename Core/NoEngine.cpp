@@ -14,22 +14,14 @@
 #include "Graphics/Buffer.h"
 #include "Graphics/Shader.h"
 
-#include "Graphics/OpenGL/GLRenderDevice.h"
-#include "Graphics/OpenGL/GLWindow.h"
+//#include "Graphics/OpenGL/GLRenderDevice.h"
+#include "Graphics/Vulkan/VKRenderDevice.h"
 
 using namespace std;
 using namespace Graphics;
 
 int main()
 {
-	std::unique_ptr<Graphics::RenderDevice> renderDevice = make_unique<Graphics::GLRenderDevice>();
-
-	WindowDescriptor windowDescriptor;
-	windowDescriptor.width = 800;
-	windowDescriptor.height = 600;
-	windowDescriptor.title = "NoEngine (OpenGL)";
-	windowDescriptor.resizable = false;
-
 	typedef std::chrono::high_resolution_clock Time;
 	typedef std::chrono::nanoseconds ns;
 	typedef std::chrono::duration<float> fsec;
@@ -40,105 +32,133 @@ int main()
 	float time = 0.0f;
 	float nextTick = 0.0f;
 
-	struct TriangleVertexData
-	{
-		float position[3];
-	};
+	// ==== WINDOW ===================================================
+	WindowDescriptor windowDescriptor;
+	windowDescriptor.width = 800;
+	windowDescriptor.height = 600;
+	windowDescriptor.title = "NoEngine (Vulkan)";
+	windowDescriptor.resizable = false;
+	// ===============================================================
 
-	GLfloat vertices[] = {
-		-1, 0, 0,
-		1, 0, 0,
-		0, 1, 0,
-	};
+	auto renderDevice = VKRenderDevice::CreateDevice(windowDescriptor);
 
-	BufferDescriptor triangleBufferDescriptor;
-	triangleBufferDescriptor.size = 3;
-	triangleBufferDescriptor.stride = 3 * sizeof(float);
+	//// ==== TRIANGLE BUFFER ==========================================
+	//float vertices[] = {
+	//	-1, 0, 0, 1, 0, 0,
+	//	1, 0, 0, 0, 1, 0,
+	//	0, 1, 0, 0, 0, 1
+	//};
 
-	BufferData triangleBufferData;
-	triangleBufferData.size = 9;
-	triangleBufferData.data = &vertices;
+	//BufferDescriptor triangleBufferDescriptor;
+	//triangleBufferDescriptor.size = 3;
+	//triangleBufferDescriptor.stride = 6 * sizeof(float);
 
-	// ==== SHADERS ====
+	//BufferData triangleBufferData;
+	//triangleBufferData.size = 18;
+	//triangleBufferData.data = &vertices;
+	//// ===============================================================
+
+	// ==== VERTEX SHADER ============================================
 	ShaderDescriptor vertexDescriptor;
 	vertexDescriptor.shaderType = ShaderType::VERTEX;
-	ShaderCreationDescriptor vertexCreateInfo;
-	vertexCreateInfo.filename = "Shaders/GLSL/triangle.vert.glsl";
-	vertexCreateInfo.pDesc = &vertexDescriptor;
 
+	ShaderCreationDescriptor vertexCreateInfo;
+	vertexCreateInfo.filename = "Shaders/SPIR-V/triangle.vert.spv";
+	vertexCreateInfo.pDesc = &vertexDescriptor;
+	// ===============================================================
+
+	// ==== PIXEL SHADER =============================================
 	ShaderDescriptor fragDescriptor;
 	fragDescriptor.shaderType = ShaderType::PIXEL;
+
 	ShaderCreationDescriptor fragCreateInfo;
-	fragCreateInfo.filename = "Shaders/GLSL/triangle.frag.glsl";
+	fragCreateInfo.filename = "Shaders/SPIR-V/triangle.frag.spv";
 	fragCreateInfo.pDesc = &fragDescriptor;
+	// ===============================================================
 
 	try
 	{
-
-		auto window = renderDevice->CreateWindow(windowDescriptor);
+		auto window = renderDevice->GetWindow();
+		auto swapChain = renderDevice->CreateSwapChain();
 		auto vertexShader = renderDevice->CreateShader(vertexCreateInfo);
 		auto fragmentShader = renderDevice->CreateShader(fragCreateInfo);
-		auto triangleBuffer = renderDevice->CreateBuffer(triangleBufferDescriptor, triangleBufferData);
+		//auto triangleBuffer = renderDevice->CreateBuffer(triangleBufferDescriptor, triangleBufferData);
 
 
-		// Create a program
-		auto shaderProgram = glCreateProgram();
-		glAttachShader(shaderProgram, vertexShader->GetNativeHandle());
-		glAttachShader(shaderProgram, fragmentShader->GetNativeHandle());
-		glLinkProgram(shaderProgram);
+		Viewport viewport;
+		BlendStateDescriptor blendState;
+		RasterizerStateDescriptor rasterizerState;
+		DepthStencilStateDescriptor depthStencilState;
 
-		// VAO...
-		GLuint vao;
-		glGenVertexArrays(1, &vao);
-		glBindVertexArray(vao);
+		viewport.width = windowDescriptor.width;
+		viewport.height = windowDescriptor.height;
+		blendState.enabled = true;
 
-		auto positionAttribute = glGetAttribLocation(shaderProgram, "position");
-		glVertexAttribPointer(positionAttribute, 3, GL_FLOAT, GL_FALSE, 0, NULL);
-		glEnableVertexAttribArray(positionAttribute);
+		PipelineStateCreationDescriptor pipelineCreateInfo;
+		pipelineCreateInfo.pSwapChain = swapChain;
+		pipelineCreateInfo.pVertexShader = vertexShader;
+		pipelineCreateInfo.vertexEntrypoint = "main";
+		pipelineCreateInfo.pPixelShader = fragmentShader;
+		pipelineCreateInfo.pixelEntrypoint = "main";
+		pipelineCreateInfo.viewport = viewport;
+		pipelineCreateInfo.blendState = blendState;
+		pipelineCreateInfo.rasterizerState = rasterizerState;
+		pipelineCreateInfo.depthStencilState = depthStencilState;
 
-		glClearColor(0.1f, 0.1f, 0.1f, 0.0f);
+		auto pipelineState = renderDevice->CreatePipelineState(pipelineCreateInfo);
+
+		//auto commandBuffer = renderDevice->CreateCommandBuffer();
+
+		//// VAO...
+		//GLuint vao;
+		//glGenVertexArrays(1, &vao);
+		//glBindVertexArray(vao);
+
+		//auto positionAttribute = glGetAttribLocation(pipelineState->GetNativeHandle(), "inPosition");
+		//auto colorAttribute = glGetAttribLocation(pipelineState->GetNativeHandle(), "inColor");
+
+		//glVertexAttribPointer(positionAttribute, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 6, NULL);
+		//glVertexAttribPointer(colorAttribute, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 6, (const void*) (sizeof(float) * 3));
+		//glEnableVertexAttribArray(positionAttribute);
+		//glEnableVertexAttribArray(colorAttribute);
+
 
 		while (window->ShouldClose() == false)
 		{
+		//	pipelineState->Bind();
+		//	// TODO : Replace OpenGL code with commands
+		//	commandBuffer->Clear(true, true, 0.1f, 0.1f, 0.1f, 1.0f, 1.0f);
+		//	// commandBuffer->Draw(buffer)
+		//	glBindVertexArray(vao);
+		//	glDrawArrays(GL_TRIANGLES, 0, 3); // Starting from vertex 0; 3 vertices total -> 1 triangle
+		//	// commandBuffer->Swap()
+		//	glfwSwapBuffers(static_cast<GLFWwindow*>(window->GetNativeHandle()));
+		//	// deviceContext->ExecuteCommandBuffer(commandBuffer)
 
-			// Draw Buffer
-			// TODO : command queue
-			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		//	// Update dt
+		//	auto timePoint = Time::now();
+		//	fsec fs = timePoint - lastFrameTimePoint;
+		//	deltaTime = fs.count();
+		//	time += deltaTime;
+		//	lastFrameTimePoint = timePoint;
 
-			glUseProgram(shaderProgram);
-			glBindVertexArray(vao);
-
-			// Draw the triangle !
-			glDrawArrays(GL_TRIANGLES, 0, 3); // Starting from vertex 0; 3 vertices total -> 1 triangle
-
-			//glColor3f(1.0f, 0.0f, 0.0f);
-			//glBegin(GL_TRIANGLES);
-			//glVertex2f(-1.0f, 0.0f);
-			//glVertex2f(1.0f, 0.0f);
-			//glVertex2f(0.0f, 1.0f);
-			//glEnd();
-
-
-			glfwSwapBuffers(static_cast<GLFWwindow*>(window->GetNativeHandle()));
-
-			// Update dt
-			auto timePoint = Time::now();
-			fsec fs = timePoint - lastFrameTimePoint;
-			deltaTime = fs.count();
-			time += deltaTime;
-			lastFrameTimePoint = timePoint;
-
-
-			// 60 FPS fixed
-			if (deltaTime < 1.0f / 60.0f)
-			{
-				long sleepDuration = ((1.0f / 60.0f) - deltaTime) * 1000000000;
-				std::this_thread::sleep_for(std::chrono::nanoseconds(sleepDuration));
-				deltaTime = 1.0f / 60.0f;
-			}
-
+		//	// 60 FPS lock
+		//	if (deltaTime < 1.0f / 60.0f)
+		//	{
+		//		long sleepDuration = ((1.0f / 60.0f) - deltaTime) * 1000000000;
+		//		std::this_thread::sleep_for(std::chrono::nanoseconds(sleepDuration));
+		//		deltaTime = 1.0f / 60.0f;
+		//	}
 			window->PollEvents();
 		}
+
+		pipelineState->Release();
+
+		vertexShader->Release();
+		fragmentShader->Release();
+
+		swapChain->Release();
+		renderDevice->Release();
 	}
 	catch (const std::exception &e)
 	{

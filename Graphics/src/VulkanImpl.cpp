@@ -1,4 +1,4 @@
-#include "Graphics/VulkanRendering/VulkanApplication.h"
+#include "Graphics/Vulkan/VulkanApplication.h"
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>

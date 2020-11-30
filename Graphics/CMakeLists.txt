@@ -11,10 +11,19 @@ find_package(glm CONFIG REQUIRED)
 # Add source to this project's executable.
 add_library(Graphics STATIC 
 	"src/VulkanImpl.cpp"
+
+	"src/Vulkan/VKPipelineState.cpp"
+	"src/Vulkan/VKRenderDevice.cpp"
+	"src/Vulkan/VKShader.cpp"
+	"src/Vulkan/VKSwapChain.cpp"
+	"src/Vulkan/VKWindow.cpp"
+
 	"src/OpenGL/GLRenderDevice.cpp"
 	"src/OpenGL/GLWindow.cpp"
 	"src/OpenGL/GLBuffer.cpp"
 	"src/OpenGL/GLShader.cpp"
+	"src/OpenGL/GLPipelineState.cpp"
+	"src/OpenGL/GLCommandBuffer.cpp"
 )
 
 target_include_directories(Graphics PUBLIC 

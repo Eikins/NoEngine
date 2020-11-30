@@ -7,7 +7,9 @@
 #include "Graphics/OpenGL/GLRenderDevice.h"
 #include "Graphics/OpenGL/GLWindow.h"
 #include "Graphics/OpenGL/GLBuffer.h"
+#include "Graphics/OpenGL/GLCommandBuffer.h"
 #include "Graphics/OpenGL/GLShader.h"
+#include "Graphics/OpenGL/GLPipelineState.h"
 
 namespace Graphics
 {
@@ -30,8 +32,10 @@ namespace Graphics
 		return buffer;
 	}
 
-	std::unique_ptr<Window> GLRenderDevice::CreateWindow(const WindowDescriptor& descriptor)
+	RenderDevice* GLRenderDevice::CreateDevice(const WindowDescriptor& descriptor)
 	{
+		auto renderDevice = new GLRenderDevice();
+		auto window = new GLWindow();
 		glfwSetErrorCallback(&GLWindow::GLFWErrorCallback);
 		glfwInit();
 
@@ -41,18 +45,23 @@ namespace Graphics
 		glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
 		glfwWindowHint(GLFW_RESIZABLE, descriptor.resizable ? GLFW_TRUE : GLFW_FALSE);
 
-		auto window = std::make_unique<GLWindow>();
 		window->_handle = glfwCreateWindow(descriptor.width, descriptor.height, descriptor.title.c_str(), nullptr, nullptr);
 
 		glfwMakeContextCurrent(static_cast<GLFWwindow*>(window->_handle));
 		glewInit();
-		return window;
+
+		renderDevice->_window = window;
+		return renderDevice;
 	}
 
-
-	std::unique_ptr<Buffer> GLRenderDevice::CreateBuffer(const BufferDescriptor &descriptor, const BufferData &data)
+	Window* GLRenderDevice::GetWindow()
 	{
-		auto buffer = std::make_unique<GLBuffer>();
+		return _window;
+	}
+
+	Buffer* GLRenderDevice::CreateBuffer(const BufferDescriptor &descriptor, const BufferData &data)
+	{
+		auto buffer = new GLBuffer();
 		glGenBuffers(1, &(buffer->GLID));
 		glBindBuffer(GL_ARRAY_BUFFER, buffer->GLID);
 		glBufferData(GL_ARRAY_BUFFER, descriptor.size * descriptor.stride, data.data, GL_STATIC_DRAW);
@@ -60,9 +69,9 @@ namespace Graphics
 		return buffer;
 	}
 
-	std::unique_ptr<Shader> GLRenderDevice::CreateShader(const ShaderCreationDescriptor &descriptor)
+	Shader* GLRenderDevice::CreateShader(const ShaderCreationDescriptor &descriptor)
 	{
-		auto shader = std::make_unique<GLShader>();
+		auto shader = new GLShader();
 		auto buffer = ReadFile(descriptor.filename);
 
 		const char *shaderSource = &buffer[0];
@@ -100,4 +109,31 @@ namespace Graphics
 
 		return shader;
 	}
+
+	SwapChain* GLRenderDevice::CreateSwapChain()
+	{
+		return nullptr;
+	}
+
+	PipelineState* GLRenderDevice::CreatePipelineState(const PipelineStateCreationDescriptor &descriptor)
+	{
+		auto pipelineState = new GLPipelineState();
+		auto glid = glCreateProgram();
+		glAttachShader(glid, *static_cast<GLuint*>(descriptor.pVertexShader->GetNativeHandle()));
+		glAttachShader(glid, *static_cast<GLuint*>(descriptor.pPixelShader->GetNativeHandle()));
+		glLinkProgram(glid);
+		pipelineState->GLID = glid;
+		return pipelineState;
+	}
+
+	CommandBuffer* GLRenderDevice::CreateCommandBuffer()
+	{
+		return new GLCommandBuffer();
+	}
+
+#pragma region DeviceObject Methods
+	void GLRenderDevice::Release() {}
+	void* GLRenderDevice::GetNativeHandle() { return nullptr; }
+#pragma endregion
+
 }

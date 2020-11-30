@@ -1,17 +1,18 @@
 #pragma once
 
-#include <GLFW/glfw3.h>
+#include <vulkan/vulkan.h>
 
 #include "Graphics/Window.h"
 
 namespace Graphics
 {
-	class GLRenderDevice;
-	class GLWindow : public Window
+	class VKRenderDevice;
+	class VKWindow : public Window
 	{
-		friend GLRenderDevice;
+		friend VKRenderDevice;
 	private:
 		GLFWwindow* _handle;
+		VkSurfaceKHR _surface;
 	public:
 		virtual void SetTitle(const std::string& title) override;
 
