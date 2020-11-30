@@ -32,7 +32,7 @@ namespace Graphics
 		glfwDestroyWindow(_handle);
 	}
 
-	void* VKWindow::GetNativeHandle()
+	void* VKWindow::GetNativeHandle() const
 	{
 		return _handle;
 	}

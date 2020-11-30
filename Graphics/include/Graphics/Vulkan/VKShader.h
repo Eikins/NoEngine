@@ -16,7 +16,7 @@ namespace Graphics
 		VkShaderModule _handle;
 	public:
 		virtual void Release() override;
-		virtual void* GetNativeHandle() override;
+		virtual void* GetNativeHandle() const override;
 
 		static std::vector<char> ReadFile(const std::string& filename);
 	};

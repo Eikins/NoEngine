@@ -14,9 +14,9 @@ namespace Graphics
 		vkDestroyShaderModule(device, _handle, nullptr);
 	}
 
-	void* VKShader::GetNativeHandle()
+	void* VKShader::GetNativeHandle() const
 	{
-		return nullptr;
+		return &_handle;
 	}
 
 	std::vector<char> VKShader::ReadFile(const std::string& filename)

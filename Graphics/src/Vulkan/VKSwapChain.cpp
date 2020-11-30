@@ -34,9 +34,39 @@ namespace Graphics
 		}
 	}
 
+	void VKSwapChain::CreateFramebuffers(const RenderPass* renderPass)
+	{
+		VkDevice device = static_cast<VKRenderDevice*>(_device)->GetVulkanDevice();
+		_framebuffers.resize(_imageViews.size());
+
+		for (size_t i = 0; i < _imageViews.size(); i++) {
+			VkImageView attachments[] = {
+				_imageViews[i]
+			};
+
+			VkRenderPass vkPass = *static_cast<VkRenderPass*>(renderPass->GetNativeHandle());
+			VkFramebufferCreateInfo framebufferInfo{};
+			framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+			framebufferInfo.renderPass = vkPass;
+			framebufferInfo.attachmentCount = 1;
+			framebufferInfo.pAttachments = attachments;
+			framebufferInfo.width = _extent.width;
+			framebufferInfo.height = _extent.height;
+			framebufferInfo.layers = 1;
+
+			if (vkCreateFramebuffer(device, &framebufferInfo, nullptr, &_framebuffers[i]) != VK_SUCCESS) {
+				throw std::runtime_error("failed to create framebuffer!");
+			}
+		}
+	}
+
 	void VKSwapChain::Release()
 	{
 		VkDevice device = static_cast<VKRenderDevice*>(_device)->GetVulkanDevice();
+		for (auto framebuffer : _framebuffers)
+		{
+			vkDestroyFramebuffer(device, framebuffer, nullptr);
+		}
 		for (auto imageView : _imageViews)
 		{
 			vkDestroyImageView(device, imageView, nullptr);
@@ -44,7 +74,7 @@ namespace Graphics
 		vkDestroySwapchainKHR(device, _handle, nullptr);
 	}
 
-	void* VKSwapChain::GetNativeHandle()
+	void* VKSwapChain::GetNativeHandle() const
 	{
 		return &_handle;
 	}

@@ -771,6 +771,16 @@ namespace Graphics
 		return nullptr;
 	}
 
+	Framebuffer* VKRenderDevice::CreateFramebuffer(const FramebufferDescriptor& descriptor)
+	{
+		return nullptr;
+	}
+
+	RenderPass* VKRenderDevice::CreateRenderPass()
+	{
+		return nullptr;
+	}
+
 	VkDevice& VKRenderDevice::GetVulkanDevice()
 	{
 		return _device;
@@ -799,7 +809,7 @@ namespace Graphics
 		glfwTerminate();
 	}
 
-	void* VKRenderDevice::GetNativeHandle()
+	void* VKRenderDevice::GetNativeHandle() const
 	{
 		return _instance;
 	}

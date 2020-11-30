@@ -12,6 +12,6 @@ namespace Graphics
 		RenderDevice* _device = nullptr;
 	public:
 		virtual void Release() = 0;
-		virtual void* GetNativeHandle() = 0;
+		virtual void* GetNativeHandle() const = 0;
 	};
 }

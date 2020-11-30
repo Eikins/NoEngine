@@ -4,8 +4,7 @@
 
 #include <vulkan/vulkan.h>
 
-#include "Graphics/RenderPass.h"
-#include "Graphics/SwapChain.h"
+#include "Graphics/Framebuffer.h"
 
 namespace Graphics
 {
@@ -16,21 +15,14 @@ namespace Graphics
 	};
 
 	class VKRenderDevice;
-	class VKSwapChain : public SwapChain
+	class VKFramebuffer : public Framebuffer
 	{
 		friend VKRenderDevice;
 	private:
-		VkSwapchainKHR _handle;
-		std::vector<VkImage> _images;
-		std::vector<VkImageView> _imageViews;
-		std::vector<VkFramebuffer> _framebuffers;
-		VkFormat _imageFormat;
-		VkExtent2D _extent;
+		VkFramebuffer _handle;
+		std::vector<VkImageView> _attachments;
 
-		void CreateImageViews();
 	public:
-		void CreateFramebuffers(const RenderPass* renderPass);
-
 		virtual void Release() override;
 		virtual void* GetNativeHandle() const override;
 	};

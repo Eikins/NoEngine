@@ -17,7 +17,7 @@ namespace Graphics
 		vkDestroyRenderPass(device, _renderPass, nullptr);
 	}
 
-	void* VKPipelineState::GetNativeHandle()
+	void* VKPipelineState::GetNativeHandle() const
 	{
 		return nullptr;
 	}

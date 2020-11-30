@@ -65,13 +65,15 @@ namespace Graphics
 	public:
 		virtual Window* GetWindow() override;
 		virtual Buffer* CreateBuffer(const BufferDescriptor& descriptor, const BufferData &data) override;
+		virtual Framebuffer* CreateFramebuffer(const FramebufferDescriptor& descriptor);
 		virtual Shader* CreateShader(const ShaderCreationDescriptor& descriptor) override;
 		virtual SwapChain* CreateSwapChain() override;
+		virtual RenderPass* CreateRenderPass() override;
 		virtual PipelineState* CreatePipelineState(const PipelineStateCreationDescriptor& descriptor) override;
 		virtual CommandBuffer* CreateCommandBuffer() override;
 
 		virtual void Release() override;
-		virtual void* GetNativeHandle() override;
+		virtual void* GetNativeHandle() const override;
 
 		VkDevice& GetVulkanDevice();
 		

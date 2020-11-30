@@ -1,0 +1,1 @@
+C:\VulkanSDK\1.2.148.1\Bin32\glslc.exe Shaders\GLSL\triangle.vert -o Shaders\SPIR-V\triangle.vert.spv

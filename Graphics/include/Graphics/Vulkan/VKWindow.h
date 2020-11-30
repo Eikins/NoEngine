@@ -20,7 +20,7 @@ namespace Graphics
 		virtual void PollEvents() override;
 
 		virtual void Release() override;
-		virtual void* GetNativeHandle() override;
+		virtual void* GetNativeHandle() const override;
 
 		static void GLFWErrorCallback(int id, const char* description);
 	};

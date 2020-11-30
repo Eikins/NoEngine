@@ -18,6 +18,6 @@ namespace Graphics
 		VkPipeline _pipeline;
 	public:
 		virtual void Release() override;
-		virtual void* GetNativeHandle() override;
+		virtual void* GetNativeHandle() const override;
 	};
 }
