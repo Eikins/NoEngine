@@ -1084,7 +1084,8 @@ void Graphics::VulkanApplicationImpl::DrawFrame()
 	{
 		RecreateSwapChain();
 		return;
-	} else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
+	}
+	else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
 	{
 		throw std::runtime_error("failed to acquire swap chain image!");
 	}

@@ -19,14 +19,26 @@
 //#include "Graphics/OpenGL/GLRenderDevice.h"
 //#include "Graphics/Vulkan/VKRenderDevice.h"
 
+#include "Math/Matrix4x4.h"
+
 using namespace std;
 using namespace Graphics;
-
+using namespace Math;
 int main()
 {
 	try
 	{
-		VulkanApplication vkApp;
+        auto T = Vector3(0, 2, 4);
+        auto R = Quaternion::AxisAngle(Vector3(0, 1, 0), 45.0);
+        auto S = Vector3(2.5, -1, 1);
+
+        std::cout << Matrix4x4::Translation(T) << std::endl;
+        std::cout << Matrix4x4::Rotation(R) << std::endl;
+        std::cout << Matrix4x4::Scale(S) << std::endl;
+        std::cout << Matrix4x4::TRS(T, R, S) << std::endl;
+        std::cout << Matrix4x4::Translation(T) * Matrix4x4::Rotation(R) *  Matrix4x4::Scale(S) << std::endl;
+
+        VulkanApplication vkApp;
 		vkApp.Run();
 	}
 	catch (const std::exception &e)
