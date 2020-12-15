@@ -1,6 +1,6 @@
 #include <math.h>
 
-#include "Math/Base.h"
+#include "Math/Util.h"
 #include "Math/Quaternion.h"
 
 namespace Math
@@ -134,6 +134,7 @@ namespace Math
 
 #pragma region Operators
     bool operator==(const Quaternion& a, const Quaternion& b) { return a.x == b.x && a.y == b.y && a.z == b.z && a.w == b.w; }
+    bool operator!=(const Quaternion& a, const Quaternion& b) { return a.x != b.x || a.y != b.y || a.z != b.z || a.w != b.w; }
 
     Quaternion operator+(const Quaternion& a, const Quaternion& b) { return Quaternion(a.x + b.x, a.y + b.y, a.z + b.z, a.w + b.w); }
     Quaternion operator-(const Quaternion& a, const Quaternion& b) { return Quaternion(a.x - b.x, a.y - b.y, a.z - b.z, a.w - b.w); }

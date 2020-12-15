@@ -6,7 +6,7 @@ namespace Core
 {
 #pragma region Constructor / Destructor
 
-    Transform::Transform(Transform* parent)
+    Transform::Transform(Transform* parent) : _children()
     {
         _parent = parent;
 
@@ -15,8 +15,6 @@ namespace Core
         _scale = Vector3::One;
 
         _transformMatrix = Matrix4x4::Identity;
-
-
         _hasChanged = false;
 
         if (_parent != nullptr)
@@ -54,12 +52,22 @@ namespace Core
 
     void Transform::SetParent(Transform* parent)
     {
+        if (parent == _parent)
+        {
+            return;
+        }
+
         if (_parent != nullptr)
         {
             _parent->RemoveChild(this);
         }
+
+        if (parent != nullptr)
+        {
+            parent->AddChild(this);
+        }
+
         _parent = parent;
-        _parent->AddChild(this);
         _hasChanged = true;
     }
 
