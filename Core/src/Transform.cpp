@@ -159,6 +159,7 @@ namespace Core
         {
             _transformMatrix = Matrix4x4::TRS(_position, _rotation, _scale);
             _localToWorldMatrix = _parent == nullptr ? _transformMatrix : _parent->GetLocalToWorldMatrix() * _transformMatrix;
+            _hasChanged = false;
         } else if (HasParentChanged())
         {
             _localToWorldMatrix = _parent->GetLocalToWorldMatrix() * _transformMatrix;
