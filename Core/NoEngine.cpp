@@ -4,22 +4,11 @@
 #include <chrono>
 #include <thread>
 
-#include "GL/glew.h"
-#include "GLFW/glfw3.h"
-
 #include "NoEngine.h"
-
-#include "Graphics/Vulkan/VulkanApplication.h"
-//#include "Scripting/Scripting.h"
-//#include "Graphics/Window.h"
-//#include "Graphics/RenderDevice.h"
-//#include "Graphics/Buffer.h"
-//#include "Graphics/Shader.h"
-
-//#include "Graphics/OpenGL/GLRenderDevice.h"
-//#include "Graphics/Vulkan/VKRenderDevice.h"
-
 #include "Core/Transform.h"
+#include "Graphics/GraphicsContext.h"
+
+#include "Editor/Editor.h"
 
 using namespace std;
 using namespace Graphics;
@@ -30,27 +19,40 @@ int main()
 {
 	try
 	{
+        Transform root;
+        Transform child(&root);
+        Transform child2(&child);
 
-        //auto T = Vector3(0, 2, 4);
-        //auto R = Quaternion::AxisAngle(Vector3(0, 1, 0), 45.0);
-        //auto S = Vector3(2.5, -1, 1);
+        root.SetPosition(Vector3(1, 0, 0));
+        child.SetRotation(Quaternion::AxisAngle(Vector3::Up, 90.0f));
+        child2.SetPosition(Vector3(1, 0, 0));
 
-        //std::cout << Matrix4x4::TRS(T, R, S) << std::endl;
+        cout << child2.GetLocalToWorldMatrix() << endl;
 
-        Transform* root = new Transform();
-        Transform* child = new Transform(root);
-        Transform* child2 = new Transform(child);
+        WindowDescriptor windowDescriptor = {};
+        windowDescriptor.width = 800;
+        windowDescriptor.height = 600;
+        windowDescriptor.resizable = true;
+        windowDescriptor.title = "Vulkan Application";
 
-        root->SetPosition(Vector3(1, 0, 0));
-        child->SetRotation(Quaternion::AxisAngle(Vector3::Up, 90.0f));
-        child2->SetPosition(Vector3(1, 0, 0));
+        Editor::SetupEditor();
+        auto graphics = CreateGraphicsContext(windowDescriptor);
+        Window& window = graphics.GetWindow();
 
-        child2->SetParent(nullptr);
+        while (window.ShouldClose() == false)
+        {
+            window.PollEvents();
+            // scene.Update();
+            // graphics.DrawRenderers(scene.GetRenderers(Layer.OPAQUE));
+            // graphics.DrawRenderers(scene.GetRenderers(Layer.TRANSPARENT));
+            // editors.Update();
+            // graphics.DrawEditors();
+            // graphics.PresentToScreen();
 
-        std::cout << child2->GetLocalToWorldMatrix() << std::endl;
+            graphics.DrawScene(/* root */);
+        }
 
-        VulkanApplication vkApp;
-		vkApp.Run();
+        graphics.Release();
 	}
 	catch (const std::exception &e)
 	{

@@ -6,15 +6,24 @@
 #include "Vector4.h"
 #include "Quaternion.h"
 
+#define MATRIX4X4_MEMORY_LAYOUT_COLUMN_MAJOR
+
 namespace Math
 {
     struct Matrix4x4
     {
     public:
+#ifdef MATRIX4X4_MEMORY_LAYOUT_COLUMN_MAJOR
+        float m_0_0, m_1_0, m_2_0, m_3_0;
+        float m_0_1, m_1_1, m_2_1, m_3_1;
+        float m_0_2, m_1_2, m_2_2, m_3_2;
+        float m_0_3, m_1_3, m_2_3, m_3_3;
+#else // MATRIX4X4_MEMORY_LAYOUT_ROW_MAJOR
         float m_0_0, m_0_1, m_0_2, m_0_3;
         float m_1_0, m_1_1, m_1_2, m_1_3;
         float m_2_0, m_2_1, m_2_2, m_2_3;
         float m_3_0, m_3_1, m_3_2, m_3_3;
+#endif // MATRIX4X4_MEMORY_LAYOUT_COLUMN_MAJOR
 
         // Constructors
         Matrix4x4() :
@@ -34,6 +43,7 @@ namespace Math
             m_3_0(m_3_0_), m_3_1(m_3_1_), m_3_2(m_3_2_), m_3_3(m_3_3_) {}
 
         // Methods
+        // TODO : Adapt with memory layout...
         Vector4 GetRow(int i);
         Vector4 GetColumn(int i);
 
@@ -45,13 +55,15 @@ namespace Math
         float& operator()(int row, int col);
         float operator()(int row, int col) const;
 
+        Matrix4x4 Transpose() const;
+
         // Factory
         static Matrix4x4 Translation(const Vector3& translation);
         static Matrix4x4 Rotation(const Quaternion& rotation);
         static Matrix4x4 Scale(const Vector3& scale);
-
         static Matrix4x4 TRS(const Vector3& translation, const Quaternion& rotation, const Vector3& scale);
-
+        static Matrix4x4 Perspective(float fieldOfView, float aspectRatio, float nearPlane, float farPlane);
+        static Matrix4x4 PerspectiveZ01(float fieldOfView, float aspectRatio, float nearPlane, float farPlane);
         static const Matrix4x4 Identity;
     };
 

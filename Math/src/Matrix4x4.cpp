@@ -1,5 +1,7 @@
 #include "Math/Matrix4x4.h"
 
+#include "Math/Util.h"
+
 namespace Math
 {
 #pragma region Constants
@@ -98,8 +100,37 @@ namespace Math
             0, 0, 0, 1
         );
     }
-#pragma endregion
 
+    Matrix4x4 Matrix4x4::Perspective(float fieldOfView, float aspectRatio, float nearPlane, float farPlane)
+    {
+        float scale = 1.0 / tan(Deg2Rad * fieldOfView / 2);
+        // Project along positive values (z forward)
+        float near = -nearPlane;
+        float far = -farPlane;
+        float depth = far - near;
+
+        return Matrix4x4(
+            scale / aspectRatio, 0, 0, 0,
+            0, scale, 0, 0,
+            0, 0, -(far + near) / depth, -2.0 * far * near / depth,
+            0, 0, 1, 0
+        );
+    }
+
+    Matrix4x4 Matrix4x4::PerspectiveZ01(float fieldOfView, float aspectRatio, float nearPlane, float farPlane)
+    {
+        float scale = 1.0 / tan(Deg2Rad * fieldOfView / 2);
+        // Project along positive values (z forward)
+        float depth = farPlane - nearPlane;
+
+        return Matrix4x4(
+            scale / aspectRatio, 0, 0, 0,
+            0, -scale, 0, 0,
+            0, 0, farPlane / depth, -farPlane * nearPlane / depth,
+            0, 0, 1, 0
+        );
+    }
+#pragma endregion
 
 #pragma region Methods
     Vector4 Matrix4x4::GetRow(int i)
@@ -134,6 +165,16 @@ namespace Math
         col[4] = values.y;
         col[8] = values.z;
         col[12] = values.w;
+    }
+
+    Matrix4x4 Matrix4x4::Transpose() const
+    {
+        return Matrix4x4(
+            m_0_0, m_1_0, m_2_0, m_3_0,
+            m_0_1, m_1_1, m_2_1, m_3_1,
+            m_0_2, m_1_2, m_2_2, m_3_2,
+            m_0_3, m_1_3, m_2_3, m_3_3
+        );
     }
 #pragma endregion
 

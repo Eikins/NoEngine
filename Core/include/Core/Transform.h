@@ -30,7 +30,7 @@ namespace Core
         Transform() : Transform(nullptr) {}
         ~Transform();
 
-        void MarkDirty();
+        void ForceUpdate();
         
         // Hierarchy
         void SetParent(Transform* parent);

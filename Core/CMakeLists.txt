@@ -2,7 +2,9 @@
 # project specific logic here.
 
 # Add source to this project's executable.
-add_executable (NoEngine "NoEngine.cpp" "NoEngine.h"
+add_executable (NoEngine
+	"NoEngine.cpp"
+	"NoEngine.h"
 	"src/Transform.cpp"
 )
 

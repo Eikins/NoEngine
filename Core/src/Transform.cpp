@@ -38,6 +38,11 @@ namespace Core
 #pragma endregion
 
 #pragma region Methods
+    void Transform::ForceUpdate()
+    {
+        _hasChanged = true;
+    }
+
     bool Transform::HasParentChanged()
     {
         if (_parent == nullptr)

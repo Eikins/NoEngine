@@ -93,8 +93,8 @@ namespace Math
     Quaternion Quaternion::AxisAngle(const Vector3& axis, const float& angle)
     {
         float theta = Deg2Rad * angle;
-        float sint = sin(theta / 2);
-        float cost = cos(theta / 2);
+        float sint = sinf(theta / 2);
+        float cost = cosf(theta / 2);
         Vector3 v = sint * Vector3::Normalize(axis);
         return Quaternion(
             v.x,

@@ -10,8 +10,14 @@ find_package(glm CONFIG REQUIRED)
 
 # Add source to this project's executable.
 add_library(Graphics STATIC 
-	"src/VulkanImpl.cpp"
+	"src/GraphicsContext.cpp"
+	"src/Vulkan/VulkanContext.cpp"
+	"src/Vulkan/VulkanWindow.cpp"
+	"src/Vulkan/VulkanRenderer.cpp"
 
+	"src/imgui/imgui_impl_vulkan.cpp"
+	"src/imgui/imgui_impl_glfw.cpp"
+	"src/Vulkan/VulkanImGuiRenderer.cpp"
 #	"src/Vulkan/VKFramebuffer.cpp"
 #	"src/Vulkan/VKPipelineState.cpp"
 #	"src/Vulkan/VKRenderDevice.cpp"
@@ -27,6 +33,9 @@ add_library(Graphics STATIC
 #	"src/OpenGL/GLCommandBuffer.cpp"
 )
 
+add_dependencies(Graphics Math)
+add_dependencies(Graphics Editor)
+
 target_include_directories(Graphics PUBLIC 
 	${CMAKE_CURRENT_LIST_DIR}/include 
 	${OPENGL_INCLUDE_DIR}
@@ -40,6 +49,8 @@ target_link_libraries(Graphics PUBLIC
 	glm 
 	glfw
 	${GLEW_LIBRARY}
+	Math
+	Editor
 )
 
 install(TARGETS Graphics 
