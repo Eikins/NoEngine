@@ -31,7 +31,7 @@ add_library(Graphics STATIC
 #	"src/OpenGL/GLShader.cpp"
 #	"src/OpenGL/GLPipelineState.cpp"
 #	"src/OpenGL/GLCommandBuffer.cpp"
-)
+ "include/Graphics/Vulkan/VulkanUtils.hpp")
 
 add_dependencies(Graphics Math)
 add_dependencies(Graphics Editor)

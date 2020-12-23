@@ -1,5 +1,7 @@
 #include "Graphics/Vulkan/VulkanImGuiRenderer.h"
 
+#include <stdexcept>
+
 namespace Graphics
 {
     void VulkanImGuiRenderer::CheckVkResult(VkResult result)

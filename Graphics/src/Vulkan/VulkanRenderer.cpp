@@ -15,6 +15,8 @@
 
 #include "Math/Math.h"
 
+#include "Graphics/Vulkan/VulkanUtils.hpp"
+
 namespace Graphics {
 
     struct VertexData
@@ -416,13 +418,9 @@ namespace Graphics {
         inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
         inputAssembly.primitiveRestartEnable = VK_FALSE;
 
-        VkViewport viewport{};
-        viewport.x = 0.0F;
-        viewport.y = 0.0f;
-        viewport.width = static_cast<float>(_swapChainExtent.width);
-        viewport.height = static_cast<float>(_swapChainExtent.height);
-        viewport.minDepth = 0.0F;
-        viewport.maxDepth = 1.0F;
+        
+
+        VkViewport viewport = VkCreate::Viewport(0.0f, 0.0f, _swapChainExtent.width, _swapChainExtent.height);
 
         VkRect2D scissor{};
         scissor.offset = { 0, 0 };

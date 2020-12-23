@@ -43,7 +43,7 @@ namespace Graphics
     {
         vkDeviceWaitIdle(_impl->_vkContext.device);
 
-        _impl->_vkRenderer.Cleanup();
+        //_impl->_vkRenderer.Cleanup();
         _impl->_imGuiRenderer.Release();
         _impl->_vkContext.Release();
 
@@ -62,8 +62,8 @@ namespace Graphics
 
         context._window = vkWindow;
         context._impl->_vkContext = vkContext;
-        context._impl->_vkRenderer._window = vkWindow->GetHandle();
-        context._impl->_vkRenderer.Init(vkContext);
+        //context._impl->_vkRenderer._window = vkWindow->GetHandle();
+        //context._impl->_vkRenderer.Init(vkContext);
         context._impl->_imGuiRenderer.Init(vkWindow->GetHandle(), vkContext);
 
         return context;
