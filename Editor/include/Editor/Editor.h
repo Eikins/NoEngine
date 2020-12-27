@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Components/CameraEditor.hpp"
+
 namespace Editor
 {
     void CreateContext();
@@ -10,4 +12,5 @@ namespace Editor
     void DrawEditors();
 
     void ShowFPS(float fps);
+    void DrawInspector(Core::Camera& camera);
 }

@@ -10,6 +10,8 @@
 
 #include "Editor/Editor.h"
 
+#include "Core/Time.h"
+
 using namespace std;
 using namespace Graphics;
 using namespace Math;
@@ -17,15 +19,11 @@ using namespace Core;
 
 int main()
 {
-    typedef std::chrono::high_resolution_clock Time;
+    typedef std::chrono::high_resolution_clock Chrono;
     typedef std::chrono::nanoseconds ns;
     typedef std::chrono::duration<float> fsec;
 
-    std::chrono::steady_clock::time_point lastFrameTimePoint = Time::now();
-
-    float deltaTime = 0.0f;
-    float time = 0.0f;
-    float nextTick = 0.0f;
+    std::chrono::steady_clock::time_point lastFrameTimePoint = Chrono::now();
 
 	try
 	{
@@ -49,39 +47,50 @@ int main()
         auto graphics = CreateGraphicsContext(windowDescriptor);
         Window& window = graphics.GetWindow();
 
+        Time::deltaTime = 1.0f / 60.0f;
+
+        // Temporary camera setup
+        Transform cameraTransform;
+        Camera mainCamera;
+        mainCamera._transform = &cameraTransform;
+
         while (window.ShouldClose() == false)
         {
             window.PollEvents();
-            //graphics.SetCameraProperties(scene.GetMainCamera());
+            graphics.SetupCameraProperties(mainCamera);
             if (graphics.BeginFrame())
             {
-                graphics.DrawRenderers();
+                //graphics.DrawRenderers();
                 //graphics.DrawRenderers(scene.GetRenderers(Layer.TRANSPARENT));
+
                 if (Editor::Enabled())
                 {
                     graphics.BeginEditorFrame();
-                    Editor::DrawEditors();
-                    Editor::ShowFPS(1.0f / deltaTime);
+                    Editor::DrawInspector(mainCamera);
+                    Editor::ShowFPS(1.0f / Time::deltaTime);
                     graphics.EndEditorFrame();
                 }
+
                 graphics.EndFrame();
                 graphics.RenderAsync();
+
                 //scene.Update();
+                
                 graphics.WaitForRenderCompletion();
 
                 // Update dt
-	            auto timePoint = Time::now();
+	            auto timePoint = Chrono::now();
 	            fsec fs = timePoint - lastFrameTimePoint;
-	            deltaTime = fs.count();
-	            time += deltaTime;
+	            Time::deltaTime = fs.count();
+	            Time::time += Time::deltaTime;
 	            lastFrameTimePoint = timePoint;
 
 	            // 60 FPS lock
-	            if (deltaTime < 1.0f / 60.0f)
+	            if (Time::deltaTime < 1.0f / 60.0f)
 	            {
-		            long sleepDuration = ((1.0f / 60.0f) - deltaTime) * 1000000000;
+		            long sleepDuration = ((1.0f / 60.0f) - Time::deltaTime) * 1000000000;
 		            std::this_thread::sleep_for(std::chrono::nanoseconds(sleepDuration));
-		            deltaTime = 1.0f / 60.0f;
+		            Time::deltaTime = 1.0f / 60.0f;
 	            }
             }
         }

@@ -176,6 +176,16 @@ namespace Math
             m_0_3, m_1_3, m_2_3, m_3_3
         );
     }
+
+    Matrix4x4 Matrix4x4::InverseTR() const
+    {
+        return Matrix4x4(
+            m_0_0, m_1_0, m_2_0, -m_0_3,
+            m_0_1, m_1_1, m_2_1, -m_1_3,
+            m_0_2, m_1_2, m_2_2, -m_2_3,
+            m_3_0, m_3_1, m_3_2,  m_3_3
+        );
+    }
 #pragma endregion
 
 #pragma region Operators

@@ -20,7 +20,7 @@ namespace Graphics
         VulkanContext _vkContext;
 
         VulkanImGui _vkImGui;
-        VulkanSwapchain _swapChain;
+        VulkanSwapchain _swapchain;
 
         VkCommandBuffer _commandBuffer = VK_NULL_HANDLE;;
         VkRenderPass _renderPass = VK_NULL_HANDLE;
@@ -32,9 +32,23 @@ namespace Graphics
 
         bool _framebufferResized = false;
 
+        struct GeometryPushConstants
+        {
+            Math::Matrix4x4 _viewMatrix;
+            Math::Matrix4x4 _projectionMatrix;
+            Math::Vector3 _worldCameraPosition;
+        } _geometryPushConstants;
+
+        void SetupCameraProperties(Core::Camera& camera)
+        {
+            _geometryPushConstants._viewMatrix = camera.GetTransform()->GetLocalToWorldMatrix().InverseTR();
+            _geometryPushConstants._projectionMatrix = camera.GetProjectionMatrix();
+            // TODO : world camera position
+        }
+
         bool BeginFrame()
         {
-            VkResult result = _swapChain.AcquireImage(_imageAvailableSemaphore, &_imageIndex);
+            VkResult result = _swapchain.AcquireImage(_imageAvailableSemaphore, &_imageIndex);
 
             if (result == VK_ERROR_OUT_OF_DATE_KHR)
             {
@@ -57,7 +71,7 @@ namespace Graphics
             renderPassInfo.renderPass = _renderPass;
             renderPassInfo.framebuffer = _framebuffers[_imageIndex];
             renderPassInfo.renderArea.offset = { 0, 0 };
-            renderPassInfo.renderArea.extent = _swapChain.extent;
+            renderPassInfo.renderArea.extent = _swapchain.extent;
             renderPassInfo.clearValueCount = 1;
             renderPassInfo.pClearValues = &clearColor;
 
@@ -108,7 +122,7 @@ namespace Graphics
                 throw std::runtime_error("Failed to submit draw command buffer!");
             }
 
-            VkResult result = _swapChain.PresentToScreen(_imageIndex, _renderFinishedSemaphore);
+            VkResult result = _swapchain.PresentToScreen(_imageIndex, _renderFinishedSemaphore);
             if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || _framebufferResized) {
                 int width, height;
                 glfwGetFramebufferSize(_window, &width, &height);
@@ -141,7 +155,7 @@ namespace Graphics
             vkDestroySemaphore(_vkContext.device, _renderFinishedSemaphore, nullptr);
             _vkImGui.Release();
             vkDestroyRenderPass(_vkContext.device, _renderPass, nullptr);
-            _swapChain.Release();
+            _swapchain.Release();
             _vkContext.Release();
 
             glfwDestroyWindow(_window);
@@ -154,7 +168,7 @@ namespace Graphics
             {
                 // TODO : Create a RenderPass object
                 VkAttachmentDescription colorAttachment{};
-                colorAttachment.format = _swapChain.format;
+                colorAttachment.format = _swapchain.format;
                 colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
                 colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
                 colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -212,12 +226,12 @@ namespace Graphics
 
         void CreateFramebuffers()
         {
-            uint32_t imageCount = _swapChain.GetImageCount();
+            uint32_t imageCount = _swapchain.GetImageCount();
             _framebuffers.resize(imageCount);
 
             for (size_t i = 0; i < imageCount; i++) {
                 VkImageView attachments[] = {
-                    _swapChain.GetImageView(i)
+                    _swapchain.GetImageView(i)
                 };
 
                 VkFramebufferCreateInfo framebufferInfo{};
@@ -225,8 +239,8 @@ namespace Graphics
                 framebufferInfo.renderPass = _renderPass;
                 framebufferInfo.attachmentCount = 1;
                 framebufferInfo.pAttachments = attachments;
-                framebufferInfo.width = _swapChain.extent.width;
-                framebufferInfo.height = _swapChain.extent.height;
+                framebufferInfo.width = _swapchain.extent.width;
+                framebufferInfo.height = _swapchain.extent.height;
                 framebufferInfo.layers = 1;
 
                 if (vkCreateFramebuffer(_vkContext.device, &framebufferInfo, nullptr, &_framebuffers[i]) != VK_SUCCESS) {
@@ -238,7 +252,7 @@ namespace Graphics
         void OnWindowResize(uint32_t width, uint32_t height)
         {
             WaitForRenderCompletion();
-            _swapChain.Recreate(width, height);
+            _swapchain.Recreate(width, height);
             for (uint32_t i = 0; i < _framebuffers.size(); i++)
             {
                 vkDestroyFramebuffer(_vkContext.device, _framebuffers[i], nullptr);
@@ -283,6 +297,8 @@ namespace Graphics
         return *_window;
     }
 
+    void GraphicsContext::SetupCameraProperties(Core::Camera& camera) { _impl->SetupCameraProperties(camera); }
+
     bool GraphicsContext::BeginFrame() { return _impl->BeginFrame(); }
     void GraphicsContext::EndFrame() { _impl->EndFrame(); }
     void GraphicsContext::DrawRenderers() { _impl->DrawRenderers(); }
@@ -312,7 +328,7 @@ namespace Graphics
         context._impl->_vkContext = VulkanContext::CreateVulkanContext(*vkWindow);
         auto vkContext = &context._impl->_vkContext;
         context._impl->_vkImGui.Init(vkContext, descriptor.width, descriptor.height);
-        context._impl->_swapChain.Init(vkContext, descriptor.width, descriptor.height);
+        context._impl->_swapchain.Init(vkContext, descriptor.width, descriptor.height);
         context._impl->CreateResources();
         context._impl->_vkImGui.CreateResources(context._impl->_renderPass, vkContext->graphicsQueue);
         

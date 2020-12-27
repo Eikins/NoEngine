@@ -3,6 +3,7 @@
 #include <memory>
 
 #include "Window.h"
+#include "Core/Components/Camera.h"
 
 namespace Graphics
 {
@@ -18,6 +19,8 @@ namespace Graphics
         Window* _window = nullptr;
     public:
         Window& GetWindow();
+
+        void SetupCameraProperties(Core::Camera& camera);
 
         bool BeginFrame();
         void EndFrame();

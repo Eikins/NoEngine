@@ -21,6 +21,8 @@ namespace Math
         Vector3 UpVector() const;
         Vector3 ForwardVector() const;
 
+        Vector3 GetEulerAngles() const;
+
         // Quaternion Operations
         static Quaternion Normalize(const Quaternion& q);
         static Quaternion Slerp(const Quaternion& start, const Quaternion& end, const float& t);

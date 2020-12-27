@@ -18,24 +18,9 @@ add_library(Graphics STATIC
 
 	"src/Vulkan/VulkanRenderer.cpp"
 
-#	"src/imgui/imgui_impl_vulkan.cpp"
 	"src/imgui/imgui_impl_glfw.cpp"
-#	"src/Vulkan/VulkanImGuiRenderer.cpp"
 	"src/Vulkan/VulkanImGui.cpp"
-#	"src/Vulkan/VKFramebuffer.cpp"
-#	"src/Vulkan/VKPipelineState.cpp"
-#	"src/Vulkan/VKRenderDevice.cpp"
-#	"src/Vulkan/VKShader.cpp"
-#	"src/Vulkan/VKSwapChain.cpp"
-#	"src/Vulkan/VKWindow.cpp"
-
-#	"src/OpenGL/GLRenderDevice.cpp"
-#	"src/OpenGL/GLWindow.cpp"
-#	"src/OpenGL/GLBuffer.cpp"
-#	"src/OpenGL/GLShader.cpp"
-#	"src/OpenGL/GLPipelineState.cpp"
-#	"src/OpenGL/GLCommandBuffer.cpp"
- "include/Graphics/Vulkan/VulkanUtils.hpp" "include/Graphics/Vulkan/vulkanBuffer.h" "src/Vulkan/VulkanBuffer.cpp" "include/Graphics/Vulkan/VulkanImGui.h" "src/Vulkan/VulkanImGui.cpp" "include/Graphics/Vulkan/VulkanSwapchain.h" "src/Vulkan/VulkanSwapchain.cpp")
+)
 
 add_dependencies(Graphics Math)
 add_dependencies(Graphics Editor)
@@ -45,6 +30,9 @@ target_include_directories(Graphics PUBLIC
 	${OPENGL_INCLUDE_DIR}
 	${Vulkan_INCLUDE_DIRS}
 	${GLEW_INCLUDE_DIR}
+
+	${CMAKE_CURRENT_LIST_DIR}/../Math/include 
+	${CMAKE_CURRENT_LIST_DIR}/../Core/include 
 )
 
 target_link_libraries(Graphics PUBLIC 

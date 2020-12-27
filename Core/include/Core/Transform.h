@@ -4,12 +4,18 @@
 
 #include "Math/Math.h"
 
+namespace Editor
+{
+    class CameraEditor;
+}
+
 namespace Core
 {
     // Adapted from Python Implementation : https://github.com/Eikins/3D-Sea-Project/blob/master/sea3d/math/matrix4.py
     // From Noe Masse
     class Transform
     {
+        friend class Editor::CameraEditor;
     private:
         Transform* _parent;
         std::vector<Transform*> _children;

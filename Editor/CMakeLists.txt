@@ -16,6 +16,9 @@ add_library(Editor STATIC
 target_include_directories(Editor PUBLIC 
 	${CMAKE_CURRENT_LIST_DIR}/include
 	${CMAKE_CURRENT_LIST_DIR}/include/imgui
+
+	${CMAKE_CURRENT_LIST_DIR}/../Math/include
+	${CMAKE_CURRENT_LIST_DIR}/../Core/include
 )
 
 target_link_libraries(Editor PUBLIC 

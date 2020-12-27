@@ -1,5 +1,7 @@
 #include "Editor/Editor.h"
 
+#include "Editor/Components/CameraEditor.hpp"
+
 #include "imgui.h"
 
 namespace Editor
@@ -20,6 +22,8 @@ namespace Editor
         // Setup Dear ImGui style
         //ImGui::StyleColorsDark();
         //ImGui::StyleColorsClassic();
+        
+        // From community imgui styles
         ImGuiStyle& style = ImGui::GetStyle();
         style.Colors[ImGuiCol_Text] = ImVec4(1.00f, 1.00f, 1.00f, 1.00f);
         style.Colors[ImGuiCol_TextDisabled] = ImVec4(0.50f, 0.50f, 0.50f, 1.00f);
@@ -89,17 +93,39 @@ namespace Editor
 
     void DrawEditors()
     {
-        ImGui::ShowDemoWindow();
     }
 
     void ShowFPS(float fps)
     {
+        ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_Always);
+        ImGui::Begin("Framerate", 0, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_AlwaysAutoResize);
+        ImColor color;
+        if (fps <= 15)
+        {
+            color = ImColor(208, 0, 0);
+        }
+        else if (fps < 30)
+        { 
+            color = ImColor(255, 186, 8);
+        }
+        else
+        {
+            color = ImColor(255, 255, 255);
+        }
+        ImGui::TextColored(color, "FPS: %d", static_cast<int>(fps));
+        ImGui::End();
+    }
+
+    Core::Camera camera;
+
+    void DrawInspector(Core::Camera& camera)
+    {
         auto io = ImGui::GetIO();
-        int posX = io.DisplaySize.x - 120;
-        ImGui::SetNextWindowSize(ImVec2(120, 50), ImGuiCond_Once);
-        ImGui::SetNextWindowPos(ImVec2(posX, 0), ImGuiCond_Always);
-        ImGui::Begin("Framerate");
-        ImGui::Text("FPS: %d", static_cast<int>(fps));
+        int posX = io.DisplaySize.x - 400;
+        ImGui::SetNextWindowSize(ImVec2(400, io.DisplaySize.y), ImGuiCond_Once);
+        ImGui::SetNextWindowPos(ImVec2(posX, 0), ImGuiCond_Once);
+        ImGui::Begin("Inspector");
+        CameraEditor::Draw(camera);
         ImGui::End();
     }
 }

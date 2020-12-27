@@ -6,7 +6,8 @@ add_executable (NoEngine
 	"NoEngine.cpp"
 	"NoEngine.h"
 	"src/Transform.cpp"
-)
+	"src/Components/Camera.cpp"
+ "include/Core/Mesh.h" "src/Mesh.cpp" "include/Core/Shader.h" "include/Core/Material.h" "include/Core/Components/Component.h" "src/Components/Component.cpp")
 
 add_dependencies(NoEngine Math)
 add_dependencies(NoEngine Graphics)

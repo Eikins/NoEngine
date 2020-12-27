@@ -56,6 +56,11 @@ namespace Math
         float operator()(int row, int col) const;
 
         Matrix4x4 Transpose() const;
+        /// <summary>
+        /// Transpose a rotation and negate a translation optimally, only works for Translate + Rotation matrices
+        /// </summary>
+        /// <returns></returns>
+        Matrix4x4 InverseTR() const;
 
         // Factory
         static Matrix4x4 Translation(const Vector3& translation);

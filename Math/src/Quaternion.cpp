@@ -41,6 +41,23 @@ namespace Math
             1 - 2 * (x * x + y * y)
         );
     }
+
+    Vector3 Quaternion::GetEulerAngles() const
+    {
+        float y1 = 2 * (w * x + y * z);
+        float y2 = 1 - 2 * (x * x + y * y);
+
+        float p = 2 * (w * y - z * x);
+
+        float r1 = 2 * (w * z + x * y);
+        float r2 = 1 - 2 * (y * y + z * z);
+
+        return Vector3(
+            Rad2Deg * atan2(y1, y2),
+            Rad2Deg * asin(p),
+            Rad2Deg * atan2(r1, r2)
+        );
+    }
 #pragma endregion
 
 #pragma region Static Methods
@@ -118,10 +135,10 @@ namespace Math
         float sr = sin(roll);
 
         return Quaternion(
-            cy * cp * sr - sy * sp * cr,
-            sy * cp * sr + cy * sp * cr,
-            sy * cp * cr - cy * sp * sr,
-            cy * cp * cr + sy * sp * sr
+            cr * cp * sy - sr * sp * cy,
+            sr * cp * sy + cr * sp * cy,
+            sr * cp * cy - cr * sp * sy,
+            cr * cp * cy + sr * sp * sy
         );
     }
 
