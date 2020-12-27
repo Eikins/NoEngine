@@ -4,7 +4,9 @@
 
 namespace Editor
 {
-    void SetupEditor()
+    bool __editorEnabled = false;
+
+    void CreateContext()
     {
         // Setup Dear ImGui context
         IMGUI_CHECKVERSION();
@@ -70,5 +72,34 @@ namespace Editor
         style.Colors[ImGuiCol_NavWindowingDimBg] = ImVec4(0.80f, 0.80f, 0.80f, 0.20f);
         style.Colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.80f, 0.80f, 0.80f, 0.35f);
         style.GrabRounding = style.FrameRounding = 2.3f;
+
+        __editorEnabled = true;
+    }
+
+    void DestroyContext()
+    {
+        ImGui::DestroyContext();
+        __editorEnabled = false;
+    }
+
+    bool Enabled()
+    {
+        return __editorEnabled;
+    }
+
+    void DrawEditors()
+    {
+        ImGui::ShowDemoWindow();
+    }
+
+    void ShowFPS(float fps)
+    {
+        auto io = ImGui::GetIO();
+        int posX = io.DisplaySize.x - 120;
+        ImGui::SetNextWindowSize(ImVec2(120, 50), ImGuiCond_Once);
+        ImGui::SetNextWindowPos(ImVec2(posX, 0), ImGuiCond_Always);
+        ImGui::Begin("Framerate");
+        ImGui::Text("FPS: %d", static_cast<int>(fps));
+        ImGui::End();
     }
 }

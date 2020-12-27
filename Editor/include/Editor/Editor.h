@@ -2,5 +2,12 @@
 
 namespace Editor
 {
-    void SetupEditor();
+    void CreateContext();
+    void DestroyContext();
+
+    bool Enabled();
+
+    void DrawEditors();
+
+    void ShowFPS(float fps);
 }

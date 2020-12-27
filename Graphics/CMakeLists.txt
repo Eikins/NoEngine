@@ -11,13 +11,17 @@ find_package(glm CONFIG REQUIRED)
 # Add source to this project's executable.
 add_library(Graphics STATIC 
 	"src/GraphicsContext.cpp"
+	"src/Vulkan/VulkanBuffer.cpp"
 	"src/Vulkan/VulkanContext.cpp"
+	"src/Vulkan/VulkanSwapchain.cpp"
 	"src/Vulkan/VulkanWindow.cpp"
+
 	"src/Vulkan/VulkanRenderer.cpp"
 
-	"src/imgui/imgui_impl_vulkan.cpp"
+#	"src/imgui/imgui_impl_vulkan.cpp"
 	"src/imgui/imgui_impl_glfw.cpp"
-	"src/Vulkan/VulkanImGuiRenderer.cpp"
+#	"src/Vulkan/VulkanImGuiRenderer.cpp"
+	"src/Vulkan/VulkanImGui.cpp"
 #	"src/Vulkan/VKFramebuffer.cpp"
 #	"src/Vulkan/VKPipelineState.cpp"
 #	"src/Vulkan/VKRenderDevice.cpp"
@@ -31,7 +35,7 @@ add_library(Graphics STATIC
 #	"src/OpenGL/GLShader.cpp"
 #	"src/OpenGL/GLPipelineState.cpp"
 #	"src/OpenGL/GLCommandBuffer.cpp"
- "include/Graphics/Vulkan/VulkanUtils.hpp")
+ "include/Graphics/Vulkan/VulkanUtils.hpp" "include/Graphics/Vulkan/vulkanBuffer.h" "src/Vulkan/VulkanBuffer.cpp" "include/Graphics/Vulkan/VulkanImGui.h" "src/Vulkan/VulkanImGui.cpp" "include/Graphics/Vulkan/VulkanSwapchain.h" "src/Vulkan/VulkanSwapchain.cpp")
 
 add_dependencies(Graphics Math)
 add_dependencies(Graphics Editor)

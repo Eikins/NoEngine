@@ -6,6 +6,8 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
+#include "Graphics/Vulkan/VulkanUtils.hpp"
+
 namespace Graphics
 {
     const std::vector<const char*> VulkanContext::kValidationLayers = {
@@ -24,12 +26,88 @@ namespace Graphics
         context.CreateSurface(vulkanWindow);
         context.PickPhysicalDevice();
         context.CreateLogicalDevice();
+        context.CreateCommandPool();
         return context;
     }
 
     SwapchainSupportDetails VulkanContext::QuerySwapchainSupport()
     {
         return QuerySwapchainSupport(physicalDevice);
+    }
+
+    VulkanBuffer VulkanContext::CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties)
+    {
+        VulkanBuffer buffer;
+        buffer._device = device;
+
+        VkBufferCreateInfo bufferInfo = VkCreate::BufferCreateInfo(usage, size);
+        bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+        if (vkCreateBuffer(device, &bufferInfo, nullptr, &buffer.buffer) != VK_SUCCESS) {
+            throw std::runtime_error("failed to create buffer!");
+        }
+
+        VkMemoryRequirements memRequirements;
+        vkGetBufferMemoryRequirements(device, buffer.buffer, &memRequirements);
+
+        VkMemoryAllocateInfo allocInfo{};
+        allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        allocInfo.allocationSize = memRequirements.size;
+        allocInfo.memoryTypeIndex = FindMemoryType(memRequirements.memoryTypeBits, properties);
+
+        if (vkAllocateMemory(device, &allocInfo, nullptr, &buffer.deviceMemory) != VK_SUCCESS) {
+            throw std::runtime_error("failed to allocate buffer memory!");
+        }
+
+        return buffer;
+    }
+
+    VulkanBuffer VulkanContext::CreateStagingBuffer(VkDeviceSize size)
+    {
+        return CreateBuffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    }
+
+    VkCommandBuffer VulkanContext::CreateCommandBuffer(bool beginRecording)
+    {
+        VkCommandBufferAllocateInfo allocInfo{};
+        allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+        allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+        allocInfo.commandPool = _transientCommandPool;
+        allocInfo.commandBufferCount = 1;
+
+        VkCommandBuffer commandBuffer;
+        vkAllocateCommandBuffers(device, &allocInfo, &commandBuffer);
+
+        if (beginRecording)
+        {
+            VkCommandBufferBeginInfo beginInfo{};
+            beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+            beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+            vkBeginCommandBuffer(commandBuffer, &beginInfo);
+        }
+
+        return commandBuffer;
+    }
+
+    void VulkanContext::ExecuteCommandBuffer(VkCommandBuffer commandBuffer)
+    {
+        vkEndCommandBuffer(commandBuffer);
+
+        VkSubmitInfo submitInfo{};
+        submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        submitInfo.commandBufferCount = 1;
+        submitInfo.pCommandBuffers = &commandBuffer;
+
+        vkQueueSubmit(graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
+        vkQueueWaitIdle(graphicsQueue);
+
+        vkFreeCommandBuffers(device, _transientCommandPool, 1, &commandBuffer);
+    }
+
+    void VulkanContext::FreeCommandBuffer(VkCommandBuffer commandBuffer)
+    {
+        vkFreeCommandBuffers(device, _transientCommandPool, 1, &commandBuffer);
     }
 
 #pragma region Context Initialization / Destruction
@@ -193,8 +271,23 @@ namespace Graphics
         vkGetDeviceQueue(device, indices.presentFamily.value(), 0, &presentQueue);
     }
 
+    void VulkanContext::CreateCommandPool()
+    {
+        VkCommandPoolCreateInfo poolInfo{};
+        poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+        poolInfo.queueFamilyIndex = queueFamilies.graphicsFamily.value();
+        // Make this pool buffers resetable
+        poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+
+        if (vkCreateCommandPool(device, &poolInfo, nullptr, &_transientCommandPool) != VK_SUCCESS) {
+            throw std::runtime_error("Failed to create command pool!");
+        }
+    }
+
     void VulkanContext::Release()
     {
+        vkDestroyCommandPool(device, _transientCommandPool, nullptr);
+
         vkDestroyDevice(device, nullptr);
 
         if (kEnableValidationLayers)
@@ -394,6 +487,20 @@ namespace Graphics
         }
 
         return details;
+    }
+
+    uint32_t VulkanContext::FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties)
+    {
+        VkPhysicalDeviceMemoryProperties memProperties;
+        vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memProperties);
+
+        for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
+            if (typeFilter & (1 << i) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties) {
+                return i;
+            }
+        }
+
+        throw std::runtime_error("Failed to find suitable memory type!");
     }
 #pragma endregion
 }

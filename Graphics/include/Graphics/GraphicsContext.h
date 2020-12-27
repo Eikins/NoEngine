@@ -14,10 +14,20 @@ namespace Graphics
     class GraphicsContext {
     private:
         GraphicsContext();
-        GraphicsContextImpl* _impl;
-        Window* _window;
+        GraphicsContextImpl* _impl = nullptr;
+        Window* _window = nullptr;
     public:
         Window& GetWindow();
+
+        bool BeginFrame();
+        void EndFrame();
+        void DrawRenderers();
+
+        void BeginEditorFrame();
+        void EndEditorFrame();
+
+        void RenderAsync();
+        void WaitForRenderCompletion();
 
         void DrawScene();
         void Release();

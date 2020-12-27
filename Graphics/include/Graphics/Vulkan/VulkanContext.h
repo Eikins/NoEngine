@@ -6,6 +6,7 @@
 #include <vulkan/vulkan.h>
 
 #include "Graphics/Vulkan/VulkanWindow.h"
+#include "Graphics/Vulkan/VulkanBuffer.h"
 
 namespace Graphics
 {
@@ -27,11 +28,14 @@ namespace Graphics
     struct VulkanContext
     {
     private:
+        VkCommandPool _transientCommandPool = VK_NULL_HANDLE;
+#pragma region Context Creation
         void CreateInstance();
         void SetupDebugMessenger();
         void CreateSurface(const VulkanWindow& vulkanWindow);
         void PickPhysicalDevice();
         void CreateLogicalDevice();
+        void CreateCommandPool();
 
         bool CheckDeviceExtensionsSupport(VkPhysicalDevice device);
         bool CheckValidationLayerSupport();
@@ -44,6 +48,8 @@ namespace Graphics
         bool IsDeviceSuitable(VkPhysicalDevice device);
         QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice device);
         SwapchainSupportDetails QuerySwapchainSupport(VkPhysicalDevice device);
+#pragma endregion
+
     public:
         VkDebugUtilsMessengerEXT debugMessenger = VK_NULL_HANDLE;
         VkInstance instance = VK_NULL_HANDLE;
@@ -56,6 +62,14 @@ namespace Graphics
         QueueFamilyIndices queueFamilies;
 
         SwapchainSupportDetails QuerySwapchainSupport();
+        VulkanBuffer CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties);
+        VulkanBuffer CreateStagingBuffer(VkDeviceSize size);
+
+        VkCommandBuffer CreateCommandBuffer(bool beginRecording = true);
+        void ExecuteCommandBuffer(VkCommandBuffer commandBuffer);
+        void FreeCommandBuffer(VkCommandBuffer commandBuffer);
+
+        uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
         void Release();
 
         // Constants
