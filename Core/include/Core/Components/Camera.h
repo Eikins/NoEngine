@@ -22,7 +22,6 @@ namespace Core
 		float _farPlane = 1000.0f;
 
 		bool _hasChanged = true;
-
 		Math::Matrix4x4 _projectionMatrix;
 	public:
 		Math::Matrix4x4 GetProjectionMatrix();

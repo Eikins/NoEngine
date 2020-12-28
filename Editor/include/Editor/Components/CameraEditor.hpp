@@ -28,7 +28,7 @@ namespace Editor
 				transform->_hasChanged = true;
 			}
 
-			bool hasChanged = false;
+			hasChanged = false;
 			ImGui::Text("Camera");
 			hasChanged |= ImGui::InputFloat("Field of View", &camera._fieldOfView, 0.0F, 0.0F, "%.1f");
 			hasChanged |= ImGui::InputFloat("Aspect Ratio", &camera._aspectRatio);

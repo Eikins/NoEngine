@@ -22,6 +22,7 @@ namespace Core
 	class Mesh
 	{
 	private:
+		uint16_t _vertexCount = 0;
 		std::vector<Math::Vector3> _vertices;
 		std::vector<Math::Vector3> _normals;
 		std::vector<Math::Vector4> _tangents; // Mikkt-Space tangents
@@ -29,9 +30,25 @@ namespace Core
 		
 		std::vector<uint16_t> _indices;
 	public:
-		void ComputeTangents();
+		Mesh(
+			std::vector<Math::Vector3> vertices,
+			std::vector<Math::Vector3> normals,
+			std::vector<Math::Vector4> tangents,
+			std::vector<Math::Vector2> texCoords
+		);
 
+		Mesh(
+			std::vector<Math::Vector3> vertices,
+			std::vector<Math::Vector3> normals,
+			std::vector<Math::Vector2> texCoords
+		);
+
+		uint16_t GetVertexCount();
+
+		void ComputeTangents();
 		std::vector<VertexData> GenerateInterleavedData();
+
+		static std::vector<Mesh> LoadFromFile(const std::string path, bool flipUVs = true, bool generateNormals = true, bool fixNormals = true);
 
 		static Mesh Transform(const Mesh& mesh, const Math::Matrix4x4& matrix);
 	};
