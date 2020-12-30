@@ -193,6 +193,13 @@ namespace Graphics
 			return shaderModuleCreateInfo;
 		}
 
+		inline VkPipelineCacheCreateInfo PipelineCacheCreateInfo()
+		{
+			VkPipelineCacheCreateInfo pipelineCacheCreateInfo{};
+			pipelineCacheCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
+			return pipelineCacheCreateInfo;
+		}
+
 		inline VkPipelineLayoutCreateInfo PipelineLayoutCreateInfo(const VkDescriptorSetLayout* pSetLayouts, uint32_t setLayoutCount = 1)
 		{
 			VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo{};

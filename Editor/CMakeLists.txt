@@ -11,7 +11,7 @@ add_library(Editor STATIC
 	"src/imgui/imgui_widgets.cpp"
 
 	"src/Editor/Editor.cpp"
-)
+ "include/Editor/GameObjectEditor.hpp" "include/Editor/SceneEditors.h" "src/Editor/SceneEditors.cpp")
 
 target_include_directories(Editor PUBLIC 
 	${CMAKE_CURRENT_LIST_DIR}/include

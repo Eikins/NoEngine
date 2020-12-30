@@ -1,4 +1,4 @@
-#include "Core/Mesh.h"
+#include "Core/Assets/Mesh.h"
 
 #include <stdexcept>
 
@@ -10,11 +10,12 @@ namespace Core
 {
 
 	Mesh::Mesh(
+		std::string name,
 		std::vector<Math::Vector3> vertices,
 		std::vector<Math::Vector3> normals,
 		std::vector<Math::Vector4> tangents,
 		std::vector<Math::Vector2> texCoords
-	)
+	) : Asset(name)
 	{
 		bool allSizeEquals =
 			vertices.size() == normals.size()
@@ -34,10 +35,11 @@ namespace Core
 	}
 
 	Mesh::Mesh(
+		std::string name,
 		std::vector<Math::Vector3> vertices,
 		std::vector<Math::Vector3> normals,
 		std::vector<Math::Vector2> texCoords
-	)
+	) : Asset(name)
 	{
 		bool allSizeEquals =
 			vertices.size() == normals.size()
@@ -160,18 +162,20 @@ namespace Core
 
 	Mesh Mesh::Transform(const Mesh& mesh, const Math::Matrix4x4& matrix)
 	{
-		Mesh tMesh(mesh._vertices, mesh._normals, mesh._tangents, mesh._texCoords);
+		Mesh tMesh(mesh.GetName(), mesh._vertices, mesh._normals, mesh._tangents, mesh._texCoords);
 		for (int i = 0; i < tMesh._vertexCount; i++)
 		{
 			tMesh._vertices[i] = matrix * Math::Vector4(tMesh._vertices[i], 1.0F);
 			tMesh._normals[i] = matrix * Math::Vector4(tMesh._normals[i], 0.0F);
 			tMesh._tangents[i] = matrix * Math::Vector4(tMesh._tangents[i], 0.0F);
 		}
+		return tMesh;
 	}
 
 	std::vector<Mesh> Mesh::LoadFromFile(const std::string path, bool flipUVs, bool generateNormals, bool fixNormals)
 	{
 		Assimp::Importer importer;
+
 		unsigned int flags = aiProcess_Triangulate | aiProcess_CalcTangentSpace | aiProcess_MakeLeftHanded;
 		if (generateNormals)
 		{
@@ -187,12 +191,46 @@ namespace Core
 		}
 
 		const aiScene* scene = importer.ReadFile(path.c_str(), flags);
-		std::vector<Mesh> meshes(scene->mNumMeshes);
+		std::vector<Mesh> meshes(scene->mNumMeshes, Mesh());
 
 		for (uint32_t i = 0; i < scene->mNumMeshes; i++)
 		{
 			auto paiMesh = scene->mMeshes[i];
-			// TODO
+			Mesh& mesh = meshes[i];
+			mesh._name = paiMesh->mName.C_Str();
+
+			mesh._vertexCount = paiMesh->mNumVertices;
+			mesh._vertices.resize(mesh._vertexCount, Math::Vector3::Zero);
+			mesh._normals.resize(mesh._vertexCount, Math::Vector3::Zero);
+			mesh._tangents.resize(mesh._vertexCount, Math::Vector4::Zero);
+			mesh._texCoords.resize(mesh._vertexCount, Math::Vector2::Zero);
+			for (uint32_t j = 0; j < paiMesh->mNumVertices; j++)
+			{
+				const aiVector3D vertex = paiMesh->mVertices[j];
+				const aiVector3D normal = paiMesh->mNormals[j];
+				const aiVector3D tangent = paiMesh->mTangents[j];
+				const aiVector3D texCoords = paiMesh->HasTextureCoords(0) ? paiMesh->mTextureCoords[0][j] : aiVector3D(0, 0, 0);
+
+				mesh._vertices[j] = Math::Vector3(vertex.x, vertex.y, vertex.z);
+				mesh._normals[j] = Math::Vector3(normal.x, normal.y, normal.z);
+				// Post process already makes it left handed, so we just pass the mikkt component to 1
+				mesh._tangents[j] = Math::Vector4(tangent.x, tangent.y, tangent.z, 1.0F);
+				mesh._texCoords[j] = Math::Vector2(texCoords.x, texCoords.y);
+			}
+
+			mesh._indices.resize(paiMesh->mNumFaces * 3);
+			for (uint32_t j = 0; j < paiMesh->mNumFaces; j++)
+			{
+				const aiFace face = paiMesh->mFaces[j];
+				if (face.mNumIndices != 3)
+				{
+					throw std::runtime_error("Mesh is not valid, faces should be defined as triangles.");
+				}
+				mesh._indices[3 * j] = face.mIndices[0];
+				mesh._indices[3 * j + 1] = face.mIndices[1];
+				mesh._indices[3 * j + 2] = face.mIndices[2];
+			}
 		}
+		return meshes;
 	}
 }

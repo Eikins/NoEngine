@@ -1,1 +1,5 @@
+// Home Computer
 C:\VulkanSDK\1.2.148.1\Bin32\glslc.exe Shaders\GLSL\triangle.vert -o Shaders\SPIR-V\triangle.vert.spv
+
+// Zephyrus G14:
+D:\Dev\SDKs\VulkanSDK\1.2.148.1\Bin32\glslc.exe Shaders\GLSL\standard.frag -o Shaders\SPIR-V\standard.frag.spv

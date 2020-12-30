@@ -6,25 +6,10 @@ namespace Core
 {
 #pragma region Constructor / Destructor
 
-    Transform::Transform(Transform* parent) : _children()
+    Transform::Transform(GameObject* gameObject)
     {
-        _parent = parent;
-
-        _position = Vector3::Zero;
-        _rotation = Quaternion::Identity;
-        _scale = Vector3::One;
-
-        _transformMatrix = Matrix4x4::Identity;
-        _hasChanged = false;
-
-        if (_parent != nullptr)
-        {
-            GetLocalToWorldMatrix();
-        }
-        else
-        {
-            _localToWorldMatrix = Matrix4x4::Identity;
-        }
+        _parent = nullptr;
+        _gameObject = gameObject;
     }
 
     Transform::~Transform()

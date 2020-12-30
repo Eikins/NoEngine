@@ -4,7 +4,7 @@
 #include "Graphics/GraphicsContext.h"
 #include "Graphics/Vulkan/VulkanSwapchain.h"
 #include "Graphics/Vulkan/VulkanWindow.h"
-#include "Graphics/Vulkan/VulkanRenderer.h"
+#include "Graphics/Vulkan/VulkanMeshRenderer.h"
 
 #include "Graphics/Vulkan/VulkanImGui.h"
 
@@ -19,8 +19,12 @@ namespace Graphics
         GLFWwindow* _window;
         VulkanContext _vkContext;
 
-        VulkanImGui _vkImGui;
         VulkanSwapchain _swapchain;
+
+        VulkanMeshRenderer _meshRenderer;
+#ifdef NoEngine_Editor
+        VulkanImGui _vkImGui;
+#endif
 
         VkCommandBuffer _commandBuffer = VK_NULL_HANDLE;;
         VkRenderPass _renderPass = VK_NULL_HANDLE;
@@ -32,18 +36,9 @@ namespace Graphics
 
         bool _framebufferResized = false;
 
-        struct GeometryPushConstants
-        {
-            Math::Matrix4x4 _viewMatrix;
-            Math::Matrix4x4 _projectionMatrix;
-            Math::Vector3 _worldCameraPosition;
-        } _geometryPushConstants;
-
         void SetupCameraProperties(Core::Camera& camera)
         {
-            _geometryPushConstants._viewMatrix = camera.GetTransform()->GetLocalToWorldMatrix().InverseTR();
-            _geometryPushConstants._projectionMatrix = camera.GetProjectionMatrix();
-            // TODO : world camera position
+            _meshRenderer.SetupCameraProperties(camera);
         }
 
         bool BeginFrame()
@@ -87,21 +82,26 @@ namespace Graphics
             }
         }
 
-        void DrawRenderers()
+        void DrawRenderers(const std::vector<Core::Renderer*> renderers)
         {
-
+            _meshRenderer.PrepareRenderers(renderers);
+            _meshRenderer.RecordDrawCommands(_commandBuffer);
         }
 
         void BeginEditorFrame()
         {
+#ifdef NoEngine_Editor
             ImGui_ImplGlfw_NewFrame();
             _vkImGui.NewFrame();
+#endif
         }
 
         void EndEditorFrame()
         {
+#ifdef NoEngine_Editor
             _vkImGui.UpdateBuffers();
             _vkImGui.RecordDrawCommands(_commandBuffer);
+#endif
         }
 
         void RenderAsync()
@@ -301,7 +301,7 @@ namespace Graphics
 
     bool GraphicsContext::BeginFrame() { return _impl->BeginFrame(); }
     void GraphicsContext::EndFrame() { _impl->EndFrame(); }
-    void GraphicsContext::DrawRenderers() { _impl->DrawRenderers(); }
+    void GraphicsContext::DrawRenderers(const std::vector<Core::Renderer*> renderers) { _impl->DrawRenderers(renderers); }
 
     void GraphicsContext::BeginEditorFrame() { _impl->BeginEditorFrame(); }
     void GraphicsContext::EndEditorFrame() { _impl->EndEditorFrame(); }

@@ -4,6 +4,7 @@
 
 #include "Window.h"
 #include "Core/Components/Camera.h"
+#include "Core/Components/Renderer.h"
 
 namespace Graphics
 {
@@ -24,7 +25,7 @@ namespace Graphics
 
         bool BeginFrame();
         void EndFrame();
-        void DrawRenderers();
+        void DrawRenderers(const std::vector<Core::Renderer*> renderers);
 
         void BeginEditorFrame();
         void EndEditorFrame();

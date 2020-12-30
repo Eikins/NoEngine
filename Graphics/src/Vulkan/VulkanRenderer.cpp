@@ -58,35 +58,6 @@ namespace Graphics {
         Math::Matrix4x4 projection;
     };
 
-
-
-#pragma region Debug Callbacks
-    void VulkanRenderer::FramebufferResizeCallback(GLFWwindow* window, int width, int height)
-    {
-        auto app = reinterpret_cast<VulkanRenderer*>(glfwGetWindowUserPointer(window));
-        app->_framebufferResized = true;
-    }
-#pragma endregion
-
-    std::vector<char> ReadFile(const std::string& filename)
-    {
-        std::ifstream file(filename, std::ios::ate | std::ios::binary);
-
-        if (file.is_open() == false)
-        {
-            throw std::runtime_error("Failed to open file");
-        }
-
-        size_t fileSize = (size_t)file.tellg();
-        std::vector<char>buffer(fileSize);
-
-        file.seekg(0);
-        file.read(buffer.data(), fileSize);
-        file.close();
-
-        return buffer;
-    }
-
     void VulkanRenderer::Init(const VulkanContext& ctx)
     {
         _context = ctx;
@@ -349,11 +320,11 @@ namespace Graphics {
 
     void VulkanRenderer::CreateGraphicsPipeline()
     {
-        auto vertShaderCode = ReadFile("Shaders/SPIR-V/triangle.vert.spv");
-        auto fragShaderCode = ReadFile("Shaders/SPIR-V/triangle.frag.spv");
+        //auto vertShaderCode = ReadFile("Shaders/SPIR-V/triangle.vert.spv");
+        //auto fragShaderCode = ReadFile("Shaders/SPIR-V/triangle.frag.spv");
 
-        VkShaderModule vertShaderModule = CreateShaderModule(vertShaderCode);
-        VkShaderModule fragShaderModule = CreateShaderModule(fragShaderCode);
+        VkShaderModule vertShaderModule;// = CreateShaderModule(vertShaderCode);
+        VkShaderModule fragShaderModule;// = CreateShaderModule(fragShaderCode);
 
         VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
         vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;

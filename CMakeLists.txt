@@ -19,6 +19,9 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR}/lib)
 
+# Add the Editor support
+add_definitions( -DNoEngine_Editor )
+
 # Add the modules
 add_subdirectory ("Math")
 add_subdirectory ("Scripting")

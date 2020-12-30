@@ -1,6 +1,7 @@
 #include "Graphics/Vulkan/VulkanImGui.h"
 
 #include "imgui.h"
+#include "Editor/Editor.h"
 
 #include "Graphics/Vulkan/VulkanUtils.hpp"
 
@@ -190,8 +191,9 @@ namespace Graphics
         VkViewport viewport = VkCreate::Viewport(0, 0, io.DisplaySize.x, io.DisplaySize.y);
         vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
         
+        float editorScale = Editor::GetEditorScale();
         _pushConstants.scale = Math::Vector2(2.0f / io.DisplaySize.x, 2.0f / io.DisplaySize.y);
-        _pushConstants.translation = Math::Vector2(-1.0f, -1.0f);
+        _pushConstants.translation = -Math::Vector2::One;
 
         vkCmdPushConstants(commandBuffer, _pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(PushConstants), &_pushConstants);
 

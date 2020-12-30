@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "Math/Math.h"
+#include "Asset.h"
 
 namespace Core
 {
@@ -19,7 +20,7 @@ namespace Core
 		Math::Vector2 texCoords;
 	};
 
-	class Mesh
+	class Mesh : public Asset
 	{
 	private:
 		uint16_t _vertexCount = 0;
@@ -29,8 +30,11 @@ namespace Core
 		std::vector<Math::Vector2> _texCoords;
 		
 		std::vector<uint16_t> _indices;
+
+		Mesh() : Asset("") {}
 	public:
 		Mesh(
+			std::string name,
 			std::vector<Math::Vector3> vertices,
 			std::vector<Math::Vector3> normals,
 			std::vector<Math::Vector4> tangents,
@@ -38,6 +42,7 @@ namespace Core
 		);
 
 		Mesh(
+			std::string name,
 			std::vector<Math::Vector3> vertices,
 			std::vector<Math::Vector3> normals,
 			std::vector<Math::Vector2> texCoords

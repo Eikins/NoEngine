@@ -9,7 +9,12 @@ add_executable (NoEngine
 	"NoEngine.h"
 	"src/Transform.cpp"
 	"src/Components/Camera.cpp"
- "include/Core/Mesh.h" "src/Mesh.cpp" "include/Core/Shader.h" "include/Core/Material.h" "include/Core/Components/Component.h" "src/Components/Component.cpp")
+	"src/Assets/Mesh.cpp" 
+	"src/Components/Component.cpp" 
+	"src/GameObject.cpp" 
+	"src/Scene.cpp" 
+	"src/Assets/Material.cpp"
+	"src/Assets/Asset.cpp" "include/Core/Input/InputManager.h" "include/Core/Layer.h" "src/Layer.cpp" "src/Components/Renderer.cpp" "src/Assets/Shader.cpp")
 
 add_dependencies(NoEngine Math)
 add_dependencies(NoEngine Graphics)

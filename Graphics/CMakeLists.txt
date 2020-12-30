@@ -20,7 +20,7 @@ add_library(Graphics STATIC
 
 	"src/imgui/imgui_impl_glfw.cpp"
 	"src/Vulkan/VulkanImGui.cpp"
-)
+ "include/Graphics/Vulkan/VulkanMeshRenderer.h" "src/Vulkan/VulkanMeshRenderer.cpp")
 
 add_dependencies(Graphics Math)
 add_dependencies(Graphics Editor)

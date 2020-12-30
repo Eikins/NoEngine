@@ -4,17 +4,20 @@
 
 #include "Component.h"
 
+#ifdef NoEngine_Editor
 namespace Editor
 {
-	class CameraEditor;
+	class ComponentEditors;
 }
+#endif
 
 namespace Core
 {
 	class Camera : public Component
 	{
-	public:
-		friend class Editor::CameraEditor;
+#ifdef NoEngine_Editor
+		friend class Editor::ComponentEditors;
+#endif
 	private:
 		float _fieldOfView = 90.0f;
 		float _aspectRatio = 1.0f;
@@ -24,6 +27,8 @@ namespace Core
 		bool _hasChanged = true;
 		Math::Matrix4x4 _projectionMatrix;
 	public:
+		Camera() : Component(ComponentType::Camera) {}
+
 		Math::Matrix4x4 GetProjectionMatrix();
 	};
 }

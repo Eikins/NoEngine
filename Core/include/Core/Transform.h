@@ -4,42 +4,58 @@
 
 #include "Math/Math.h"
 
+#ifdef NoEngine_Editor
 namespace Editor
 {
-    class CameraEditor;
+    class ComponentEditors;
+    class SceneEditors;
 }
+#endif
 
 namespace Core
 {
+    class GameObject;
+    class Scene;
     // Adapted from Python Implementation : https://github.com/Eikins/3D-Sea-Project/blob/master/sea3d/math/matrix4.py
     // From Noe Masse
     class Transform
     {
-        friend class Editor::CameraEditor;
+#ifdef NoEngine_Editor
+        friend class Editor::ComponentEditors;
+        friend class Editor::SceneEditors;
+#endif
+        friend class GameObject;
+        friend class Scene;
     private:
-        Transform* _parent;
+        Transform* _parent = nullptr;
         std::vector<Transform*> _children;
-        
-        Math::Vector3 _position;
-        Math::Quaternion _rotation;
-        Math::Vector3 _scale;
+    
+        GameObject* _gameObject = nullptr;
+
+        Math::Vector3 _position = Math::Vector3::Zero;
+        Math::Quaternion _rotation = Math::Quaternion::Identity;
+        Math::Vector3 _scale = Math::Vector3::One;
     
         bool _hasChanged = false;
 
-        Math::Matrix4x4 _transformMatrix;
+        Math::Matrix4x4 _transformMatrix = Math::Matrix4x4::Identity;
         // Cache the matrix to avoid to recompute each frame
-        Math::Matrix4x4 _localToWorldMatrix;
+        Math::Matrix4x4 _localToWorldMatrix = Math::Matrix4x4::Identity;
 
         bool HasParentChanged();
+    
+        Transform() {}
+        Transform(GameObject* gameObject);
     public:
-        Transform(Transform* parent);
-        Transform() : Transform(nullptr) {}
         ~Transform();
 
         void ForceUpdate();
         
         // Hierarchy
+        // TODO: Adapt scene to support parental modifications
+    private:
         void SetParent(Transform* parent);
+    public:
         void AddChild(Transform* child);
         void RemoveChild(Transform* child);
 
