@@ -5,6 +5,7 @@
 
 	#include "Core/Components/Camera.h"
 	#include "Core/Components/Renderer.h"
+	#include "Core/Components/ScriptedBehaviour.h"
 	#include "Core/Assets/Asset.h"
 
 	namespace Editor
@@ -32,19 +33,26 @@
 					auto eulerAngles = transform._rotation.GetEulerAngles();
 					auto scale = transform._scale;
 
-					if (ImGui::InputFloat3("Position", reinterpret_cast<float*>(&position)))
+					if (ImGui::DragFloat3("Position", reinterpret_cast<float*>(&position), 0.1f))
 					{
 						transform.SetPosition(position);
 					}
 
-					if (ImGui::InputFloat3("Rotation", reinterpret_cast<float*>(&eulerAngles)))
+					if (ImGui::DragFloat3("Rotation", reinterpret_cast<float*>(&eulerAngles), 0.1f))
 					{
 						transform.SetRotation(Math::Quaternion::Euler(eulerAngles));
 					}
 
-					if (ImGui::InputFloat3("Scale", reinterpret_cast<float*>(&scale)))
+					if (ImGui::DragFloat3("Scale", reinterpret_cast<float*>(&scale), 0.1f))
 					{
 						transform.SetScale(scale);
+					}
+
+					if (ImGui::Button("Reset"))
+					{
+						transform.SetPosition(Math::Vector3::Zero);
+						transform.SetRotation(Math::Quaternion::Identity);
+						transform.SetScale(Math::Vector3::One);
 					}
 				}
 			}
@@ -59,6 +67,9 @@
 				case Core::ComponentType::Renderer:
 					DrawRenderer(static_cast<Core::Renderer*>(component));
 					break;
+				case Core::ComponentType::ScriptedBehaviour:
+					DrawScriptedBehaviour(static_cast<Core::ScriptedBehaviour*>(component));
+					break;
 				default: break;
 				}
 			}
@@ -69,7 +80,7 @@
 				{
 					bool hasChanged = false;
 
-					hasChanged |= ImGui::InputFloat("Field of View", &(camera->_fieldOfView), 0.0F, 0.0F, "%.1f");
+					hasChanged |= ImGui::DragFloat("Field of View", &(camera->_fieldOfView), 0.1F, 0.0F, 0.0F, "%.1f");
 					hasChanged |= ImGui::InputFloat("Aspect Ratio", &(camera->_aspectRatio));
 					hasChanged |= ImGui::InputFloat("Near Plane", &(camera->_nearPlane), 0.0F, 0.0F, "%.2f");
 					hasChanged |= ImGui::InputFloat("Far Plane", &(camera->_farPlane), 0.0F, 0.0F, "%.1f");
@@ -96,6 +107,26 @@
 					InputAsset("Mesh", renderer->mesh);
 					InputAsset("Material", renderer->material);
 				}
+			}
+
+			static void DrawScriptedBehaviour(Core::ScriptedBehaviour* behaviour)
+			{
+				if (behaviour->script == nullptr)
+				{
+					if (ImGui::CollapsingHeader("Missing Script (Script)", ImGuiTreeNodeFlags_DefaultOpen))
+					{
+						InputAsset("Script", nullptr);
+					}
+				}
+				else
+				{
+					if (ImGui::CollapsingHeader((behaviour->script->GetName() + " (Script)").c_str(), ImGuiTreeNodeFlags_DefaultOpen))
+					{
+						InputAsset("Script", behaviour->script);
+						behaviour->script->DrawExposedProperties();
+					}
+				}
+
 			}
 		};
 	}

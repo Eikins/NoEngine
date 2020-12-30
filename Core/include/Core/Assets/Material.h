@@ -8,6 +8,7 @@ namespace Core
 {
 	struct RenderStateBlock
 	{
+		bool blendEnabled = false;
 		bool depthTestEnabled = true;
 		bool depthWrite = true;
 

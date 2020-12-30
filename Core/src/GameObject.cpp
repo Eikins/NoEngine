@@ -10,6 +10,7 @@ namespace Core
 	{
 		Component& comp = _scene->CreateComponent(component);
 		comp._transform = &(_transform);
+		comp._gameObject = this;
 		_components.push_back(&comp);
 		return comp;
 	}

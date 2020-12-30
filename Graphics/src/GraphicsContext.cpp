@@ -36,6 +36,11 @@ namespace Graphics
 
         bool _framebufferResized = false;
 
+        void PrepareRenderers(const std::vector<Core::Renderer*>& renderers)
+        {
+            _meshRenderer.PrepareRenderers(renderers);
+        }
+
         void SetupCameraProperties(Core::Camera& camera)
         {
             _meshRenderer.SetupCameraProperties(camera);
@@ -77,15 +82,13 @@ namespace Graphics
         void EndFrame()
         {
             vkCmdEndRenderPass(_commandBuffer);
-            if (vkEndCommandBuffer(_commandBuffer) != VK_SUCCESS) {
-                throw std::runtime_error("failed to record command buffer!");
-            }
         }
 
-        void DrawRenderers(const std::vector<Core::Renderer*> renderers)
+        void DrawRenderers(const std::vector<Core::Renderer*>& renderers)
         {
-            _meshRenderer.PrepareRenderers(renderers);
-            _meshRenderer.RecordDrawCommands(_commandBuffer);
+            _meshRenderer.UpdateBuffers(renderers);
+            auto extent = _swapchain.extent;
+            _meshRenderer.RecordDrawCommands(_commandBuffer, renderers, extent.width, extent.height);
         }
 
         void BeginEditorFrame()
@@ -106,6 +109,10 @@ namespace Graphics
 
         void RenderAsync()
         {
+            if (vkEndCommandBuffer(_commandBuffer) != VK_SUCCESS) {
+                throw std::runtime_error("failed to record command buffer!");
+            }
+
             VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
 
             VkSubmitInfo submitInfo{};
@@ -297,11 +304,12 @@ namespace Graphics
         return *_window;
     }
 
+    void GraphicsContext::PrepareRenderers(const std::vector<Core::Renderer*>& renderers) { _impl->PrepareRenderers(renderers); }
     void GraphicsContext::SetupCameraProperties(Core::Camera& camera) { _impl->SetupCameraProperties(camera); }
 
     bool GraphicsContext::BeginFrame() { return _impl->BeginFrame(); }
     void GraphicsContext::EndFrame() { _impl->EndFrame(); }
-    void GraphicsContext::DrawRenderers(const std::vector<Core::Renderer*> renderers) { _impl->DrawRenderers(renderers); }
+    void GraphicsContext::DrawRenderers(const std::vector<Core::Renderer*>& renderers) { _impl->DrawRenderers(renderers); }
 
     void GraphicsContext::BeginEditorFrame() { _impl->BeginEditorFrame(); }
     void GraphicsContext::EndEditorFrame() { _impl->EndEditorFrame(); }
@@ -327,11 +335,13 @@ namespace Graphics
         context._window = vkWindow;
         context._impl->_vkContext = VulkanContext::CreateVulkanContext(*vkWindow);
         auto vkContext = &context._impl->_vkContext;
-        context._impl->_vkImGui.Init(vkContext, descriptor.width, descriptor.height);
         context._impl->_swapchain.Init(vkContext, descriptor.width, descriptor.height);
         context._impl->CreateResources();
+        context._impl->_meshRenderer.Init(vkContext, context._impl->_renderPass);
+        context._impl->_vkImGui.Init(vkContext, descriptor.width, descriptor.height);
         context._impl->_vkImGui.CreateResources(context._impl->_renderPass, vkContext->graphicsQueue);
         
+
         ImGui_ImplGlfw_InitForVulkan(vkWindow->GetHandle(), true);
         return context;
     }

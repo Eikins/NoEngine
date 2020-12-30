@@ -28,8 +28,8 @@ void main() {
     mat4 localToClip = constantBuffer.M_Proj * constantBuffer.M_View  * perObjectBuffer.M_LocalToWorld;
 
     gl_Position = localToClip * vec4(InPosition, 1.0);
-    Out.wNormal = (localToClip * vec4(InNormal, 0.0)).xyz;
-    Out.wTangent = (localToClip * vec4(InTangent.xyz, 0.0)).xyz;
+    Out.wNormal = (perObjectBuffer.M_LocalToWorld * vec4(InNormal, 0.0)).xyz;
+    Out.wTangent = (perObjectBuffer.M_LocalToWorld * vec4(InTangent.xyz, 0.0)).xyz;
     Out.texCoords = InTexCoords;
 }
 

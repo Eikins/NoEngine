@@ -29,6 +29,8 @@ namespace Core
 	public:
 		Camera() : Component(ComponentType::Camera) {}
 
+		void SetAspectRatio(float aspectRatio);
+
 		Math::Matrix4x4 GetProjectionMatrix();
 	};
 }

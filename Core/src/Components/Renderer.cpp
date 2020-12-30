@@ -4,6 +4,6 @@ namespace Core
 {
 	bool Renderer::operator==(const Renderer& rhs) const
 	{
-		return _transform == rhs._transform && mesh == rhs.mesh && material == rhs.material;
+		return mesh == rhs.mesh && material == rhs.material;
 	}
 }

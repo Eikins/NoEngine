@@ -13,6 +13,7 @@
 
 #ifdef NoEngine_Editor
 #include "Editor/Editor.h"
+#include "imgui.h"
 #endif
 
 #include "Core/Time.h"
@@ -67,6 +68,30 @@ int main()
         auto barracudaMeshes = Mesh::LoadFromFile("Models/Barracuda/Barracuda_Model.fbx");
         Material barracudaMaterial("Standard", &standardVertexShader, &standardFragmentShader);
 
+#pragma region Sin Wave Script
+        class SinWaveScript : public Script
+        {
+        public:
+            SinWaveScript() : Script("SinWave") {}
+        private:
+            float _speed = 1.0f;
+
+            virtual void Initialize(GameObject* gameObject, Transform* transform) override {}
+
+            virtual void OnUpdate(GameObject* gameObject, Transform* transform) override
+            {
+                transform->SetPosition(Vector3(0, Sin(Time::time * _speed), 0));
+            }
+
+            virtual void DrawExposedProperties() override
+            {
+                ImGui::InputFloat("Speed", &_speed);
+            }
+
+        } sinWaveScript;
+#pragma endregion
+
+
         // Game Object
         Scene scene("Example Scene");
         GameObject& cameraObject = scene.CreateGameObject("Main Camera", nullptr);
@@ -75,14 +100,20 @@ int main()
 
         // Components
         Camera& mainCamera = static_cast<Camera&>(cameraObject.AddComponent(ComponentType::Camera));
+        mainCamera.SetAspectRatio(static_cast<float>(windowDescriptor.width) / windowDescriptor.height);
         Renderer& barracudaRenderer = static_cast<Renderer&>(barracudaObject.AddComponent(ComponentType::Renderer));
         barracudaRenderer.mesh = &barracudaMeshes[0];
         barracudaRenderer.material = &barracudaMaterial;
+        ScriptedBehaviour& barracudaBehaviour = static_cast<ScriptedBehaviour&>(barracudaObject.AddComponent(ComponentType::ScriptedBehaviour));
+        barracudaBehaviour.script = &sinWaveScript;
 
         // Set Transforms
-        emptyObject.GetTransform().SetRotation(Quaternion::Euler(45, 0, 45));
+        emptyObject.GetTransform().SetScale(Vector3(0.2f, 0.2f, 0.2f));
+        cameraObject.GetTransform().SetPosition(Vector3(0, 0, -10));
         // ==========================================================================
         std::vector<Renderer*> renderers;
+        scene.GetRenderers(RenderingLayer::Opaque, renderers);
+        graphics.PrepareRenderers(renderers);
 
         while (window.ShouldClose() == false)
         {
@@ -90,9 +121,7 @@ int main()
             graphics.SetupCameraProperties(mainCamera);
             if (graphics.BeginFrame())
             {
-                scene.GetRenderers(RenderingLayer::Opaque, renderers);
                 graphics.DrawRenderers(renderers);
-
 #ifdef NoEngine_Editor
                 if (Editor::Enabled())
                 {
@@ -106,20 +135,13 @@ int main()
                     {
                         Editor::DrawInspector(nullptr);
                     }
-
                     Editor::ShowFPS(1.0f / Time::deltaTime);
                     graphics.EndEditorFrame();
                 }
 #endif
-
                 graphics.EndFrame();
                 graphics.RenderAsync();
-
-                //scene.Update();
-                // Temporary update
-                barracudaObject.GetTransform().SetPosition(Vector3(0, Sin(Time::time), 2));
-                //
-                
+                scene.Update();
                 graphics.WaitForRenderCompletion();
 
                 // Update dt

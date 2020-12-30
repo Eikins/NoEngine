@@ -51,6 +51,24 @@ namespace Graphics
 			return pushConstantRange;
 		}
 
+		inline VkBufferCopy BufferCopyRegion(uint32_t offset, uint32_t size)
+		{
+			VkBufferCopy copyRegion{};
+			copyRegion.srcOffset = offset;
+			copyRegion.dstOffset = offset;
+			copyRegion.size = size;
+			return copyRegion;
+		}
+
+		inline VkDescriptorBufferInfo DescriptorBufferInfo(VkBuffer buffer, uint32_t offset, uint32_t range)
+		{
+			VkDescriptorBufferInfo bufferInfo{};
+			bufferInfo.buffer = buffer;
+			bufferInfo.offset = offset;
+			bufferInfo.range = range;
+			return bufferInfo;
+		}
+
 		inline VkVertexInputBindingDescription VertexInputBindingDescription(uint32_t binding, uint32_t stride, VkVertexInputRate inputRate)
 		{
 			VkVertexInputBindingDescription vInputBindDescription{};

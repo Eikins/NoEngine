@@ -14,7 +14,8 @@ namespace Core
 		std::vector<Math::Vector3> vertices,
 		std::vector<Math::Vector3> normals,
 		std::vector<Math::Vector4> tangents,
-		std::vector<Math::Vector2> texCoords
+		std::vector<Math::Vector2> texCoords,
+		std::vector<uint16_t> indices
 	) : Asset(name)
 	{
 		bool allSizeEquals =
@@ -32,13 +33,15 @@ namespace Core
 		_normals = std::vector<Math::Vector3>(normals);
 		_tangents = std::vector<Math::Vector4>(tangents);
 		_texCoords = std::vector<Math::Vector2>(texCoords);
+		_indices = std::vector<uint16_t>(indices);
 	}
 
 	Mesh::Mesh(
 		std::string name,
 		std::vector<Math::Vector3> vertices,
 		std::vector<Math::Vector3> normals,
-		std::vector<Math::Vector2> texCoords
+		std::vector<Math::Vector2> texCoords,
+		std::vector<uint16_t> indices
 	) : Asset(name)
 	{
 		bool allSizeEquals =
@@ -54,6 +57,7 @@ namespace Core
 		_vertices = std::vector<Math::Vector3>(vertices);
 		_normals = std::vector<Math::Vector3>(normals);
 		_texCoords = std::vector<Math::Vector2>(texCoords);
+		_indices = std::vector<uint16_t>(indices);
 
 		ComputeTangents();
 	}
@@ -160,9 +164,14 @@ namespace Core
 		return data;
 	}
 
+	std::vector<uint16_t> Mesh::GetIndices()
+	{
+		return std::vector<uint16_t>(_indices);
+	}
+
 	Mesh Mesh::Transform(const Mesh& mesh, const Math::Matrix4x4& matrix)
 	{
-		Mesh tMesh(mesh.GetName(), mesh._vertices, mesh._normals, mesh._tangents, mesh._texCoords);
+		Mesh tMesh(mesh.GetName(), mesh._vertices, mesh._normals, mesh._tangents, mesh._texCoords, mesh._indices);
 		for (int i = 0; i < tMesh._vertexCount; i++)
 		{
 			tMesh._vertices[i] = matrix * Math::Vector4(tMesh._vertices[i], 1.0F);

@@ -50,7 +50,8 @@ namespace Core
 		_componentLimits =
 		{
 			4, // camera
-			maxGameObjects // renderers
+			maxGameObjects, // renderers
+			maxGameObjects // scripted behaviours
 		};
 
 		for (uint32_t i = 0; i < customLimits.size(); i++)
@@ -60,6 +61,7 @@ namespace Core
 
 		_cameras.reserve(_componentLimits[static_cast<uint32_t>(ComponentType::Camera)]);
 		_renderers.reserve(_componentLimits[static_cast<uint32_t>(ComponentType::Renderer)]);
+		_behaviours.reserve(_componentLimits[static_cast<uint32_t>(ComponentType::ScriptedBehaviour)]);
 	}
 
 	GameObject& Scene::GetGameObjectAtIndex(uint32_t index)
@@ -115,6 +117,9 @@ namespace Core
 		case (ComponentType::Renderer):
 			index = _renderers.size();
 			break;
+		case (ComponentType::ScriptedBehaviour):
+			index = _behaviours.size();
+			break;
 		}
 
 		uint32_t limit = _componentLimits[static_cast<uint32_t>(type)];
@@ -131,6 +136,17 @@ namespace Core
 		case (ComponentType::Renderer):
 			_renderers.push_back(Renderer(nullptr, nullptr));
 			return _renderers[index];
+		case (ComponentType::ScriptedBehaviour):
+			_behaviours.push_back(ScriptedBehaviour());
+			return _behaviours[index];
+		}
+	}
+
+	void Scene::Update()
+	{
+		for (int i = 0; i < _behaviours.size(); i++)
+		{
+			_behaviours[i].Update();
 		}
 	}
 #pragma endregion

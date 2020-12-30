@@ -4,12 +4,14 @@ namespace Core
 {
 	const RenderStateBlock RenderStateBlock::DefaultOpaque =
 	{
+		/* blendEnabled = */ false,
 		/* depthTestEnabled = */ true,
 		/* depthWrite = */ true
 	};
 
 	const RenderStateBlock RenderStateBlock::DefaultTransparent =
 	{
+		/* blendEnabled = */ true,
 		/* depthTestEnabled = */ true,
 		/* depthWrite = */ false
 	};

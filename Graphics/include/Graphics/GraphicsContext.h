@@ -21,11 +21,13 @@ namespace Graphics
     public:
         Window& GetWindow();
 
+        void PrepareRenderers(const std::vector<Core::Renderer*>& renderers);
+
         void SetupCameraProperties(Core::Camera& camera);
 
         bool BeginFrame();
         void EndFrame();
-        void DrawRenderers(const std::vector<Core::Renderer*> renderers);
+        void DrawRenderers(const std::vector<Core::Renderer*>& renderers);
 
         void BeginEditorFrame();
         void EndEditorFrame();

@@ -7,6 +7,7 @@
 #include "GameObject.h"
 #include "Components/Camera.h"
 #include "Components/Renderer.h"
+#include "Components/ScriptedBehaviour.h"
 #include "Layer.h"
 
 #ifdef NoEngine_Editor
@@ -51,8 +52,9 @@ namespace Core
 		// Components
 		std::vector<Camera> _cameras;
 		std::vector<Renderer> _renderers;
+		std::vector<ScriptedBehaviour> _behaviours;
 
-		std::array<uint32_t, 2> _componentLimits;
+		std::array<uint32_t, 3> _componentLimits;
 
 		SceneCache _cache;
 		Component& CreateComponent(ComponentType type);
@@ -63,5 +65,6 @@ namespace Core
 		GameObject& GetGameObjectAtIndex(uint32_t index);
 
 		void GetRenderers(RenderingLayer layers, std::vector<Renderer*>& renderers);
+		void Update();
 	};
 }

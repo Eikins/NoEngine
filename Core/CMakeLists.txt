@@ -14,7 +14,7 @@ add_executable (NoEngine
 	"src/GameObject.cpp" 
 	"src/Scene.cpp" 
 	"src/Assets/Material.cpp"
-	"src/Assets/Asset.cpp" "include/Core/Input/InputManager.h" "include/Core/Layer.h" "src/Layer.cpp" "src/Components/Renderer.cpp" "src/Assets/Shader.cpp")
+	"src/Assets/Asset.cpp" "include/Core/Input/InputManager.h" "include/Core/Layer.h" "src/Layer.cpp" "src/Components/Renderer.cpp" "src/Assets/Shader.cpp" "include/Core/Assets/Script.h" "include/Core/Components/ScriptedBehaviour.h" "src/Components/ScriptedBehaviour.cpp")
 
 add_dependencies(NoEngine Math)
 add_dependencies(NoEngine Graphics)

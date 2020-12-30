@@ -38,20 +38,23 @@ namespace Core
 			std::vector<Math::Vector3> vertices,
 			std::vector<Math::Vector3> normals,
 			std::vector<Math::Vector4> tangents,
-			std::vector<Math::Vector2> texCoords
+			std::vector<Math::Vector2> texCoords,
+			std::vector<uint16_t> indices
 		);
 
 		Mesh(
 			std::string name,
 			std::vector<Math::Vector3> vertices,
 			std::vector<Math::Vector3> normals,
-			std::vector<Math::Vector2> texCoords
+			std::vector<Math::Vector2> texCoords,
+			std::vector<uint16_t> indices
 		);
 
 		uint16_t GetVertexCount();
 
 		void ComputeTangents();
 		std::vector<VertexData> GenerateInterleavedData();
+		std::vector<uint16_t> GetIndices();
 
 		static std::vector<Mesh> LoadFromFile(const std::string path, bool flipUVs = true, bool generateNormals = true, bool fixNormals = true);
 
