@@ -11,7 +11,7 @@ namespace Core
 	public:
 		Script* script = nullptr;
 
-		ScriptedBehaviour() : Component(ComponentType::ScriptedBehaviour) {}
+		ScriptedBehaviour(GameObject* gameObject) : Component(gameObject) {}
 
 		void Initialize();
 		void Update();

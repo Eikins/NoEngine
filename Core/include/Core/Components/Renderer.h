@@ -19,7 +19,7 @@ namespace Core
 		Mesh* mesh = nullptr;
 		Material* material = nullptr;
 
-		Renderer(Mesh* mesh, Material* material) : Component(ComponentType::Renderer) {}
+		Renderer(GameObject* gameObject) : Component(gameObject) {}
 
 		bool operator==(const Renderer& rhs) const;
 	};

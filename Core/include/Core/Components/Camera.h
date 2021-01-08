@@ -27,7 +27,7 @@ namespace Core
 		bool _hasChanged = true;
 		Math::Matrix4x4 _projectionMatrix;
 	public:
-		Camera() : Component(ComponentType::Camera) {}
+		Camera(GameObject* gameObject) : Component(gameObject) {}
 
 		void SetAspectRatio(float aspectRatio);
 

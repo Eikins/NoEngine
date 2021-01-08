@@ -3,12 +3,19 @@
     #include "Editor/GameObjectEditor.hpp"
     #include "Editor/SceneEditors.h"
 
+    #include "Core/Components/Camera.h"
+
     #include "imgui.h"
 
     namespace Editor
     {
         bool __editorEnabled = false;
         float __editorScale = 1.0f;
+
+        Math::Matrix4x4 __gizmoProjViewMatrix;
+        Math::Matrix4x4 __gizmoMatrix;
+
+        bool __drawGizmosBounds = false;
 
         void SetEditorScale(float scale)
         {
@@ -20,8 +27,9 @@
             return __editorScale;
         }
 
-        void CreateContext()
+        void CreateContext(Core::GameManager& gameManager)
         {
+            __GameManager = &gameManager;
             // Setup Dear ImGui context
             IMGUI_CHECKVERSION();
             ImGui::CreateContext();
@@ -110,7 +118,7 @@
         void ShowFPS(float fps)
         {
             ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_Always);
-            ImGui::Begin("Framerate", 0, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_AlwaysAutoResize);
+            ImGui::Begin("Framerate", 0, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoInputs);
             ImGui::SetWindowFontScale(__editorScale);
             ImColor color;
             if (fps <= 15)
@@ -129,7 +137,7 @@
             ImGui::End();
         }
 
-        void DrawSceneHierarchy(Core::Scene& scene, int* selectionSceneIndex)
+        void DrawSceneHierarchy(Core::Scene& scene, std::vector<Core::Transform*>& roots, Core::GameObject** selectedObject)
         {
             auto io = ImGui::GetIO();
             ImGui::SetNextWindowSize(ImVec2(400, io.DisplaySize.y), ImGuiCond_Once);
@@ -137,7 +145,7 @@
 
             ImGui::Begin("Hierarchy");
             ImGui::SetWindowFontScale(__editorScale);
-                SceneEditors::DrawSceneHierarchy(scene, selectionSceneIndex);
+                SceneEditors::DrawSceneHierarchy(roots, selectedObject);
             ImGui::End();
         }
 
@@ -155,6 +163,69 @@
                 GameObjectEditor::Draw(*selectedObject);
             }
             ImGui::End();
+        }
+
+        void SetupCameraProperties(Core::Camera& camera)
+        {
+            __gizmoProjViewMatrix = camera.GetProjectionMatrix() * camera.GetTransform()->GetLocalToWorldMatrix().InverseTR();
+            __gizmoMatrix = Math::Matrix4x4::Identity;
+        }
+
+        inline Math::Vector2 TransformToScreenPos(const ImGuiIO& io, const Math::Vector3& position)
+        {
+            auto csPos = __gizmoProjViewMatrix * __gizmoMatrix * Math::Vector4(position, 1.0f);
+            csPos = csPos / csPos.w;
+            return (Math::Vector2(csPos.x, csPos.y) + Math::Vector2::One) / 2 * Math::Vector2(io.DisplaySize.x, io.DisplaySize.y);
+        }
+
+        void DrawLine(const Math::Vector3& from, const Math::Vector3& to, const Math::Vector3& color, float thickness)
+        {
+            auto& io = ImGui::GetIO();
+
+            auto drawList = ImGui::GetBackgroundDrawList();
+            auto ssFrom = TransformToScreenPos(io, from);
+            auto ssTo = TransformToScreenPos(io, to);
+
+            drawList->AddLine(ImVec2(ssFrom.x, ssFrom.y), ImVec2(ssTo.x, ssTo.y), ImColor(color.x * 255, color.y * 255, color.z * 255), thickness);
+        }
+
+        void DrawGizmos(Core::Scene& scene)
+        {
+            auto io = ImGui::GetIO();
+            int posX = io.DisplaySize.x - 600;
+            ImGui::SetNextWindowPos(ImVec2(posX, 0), ImGuiCond_Once);
+
+            ImGui::Begin("Gizmos");
+            ImGui::SetWindowFontScale(__editorScale);
+
+            ImGui::Checkbox("Draw Bounds", &__drawGizmosBounds);
+            if (__drawGizmosBounds)
+            {
+                auto aabbs = __GameManager->GetAllComponents<Core::AABBCollider>();
+                for (auto& aabb : aabbs)
+                {
+                    //__gizmoMatrix = aabb.GetTransform()->GetLocalToWorldMatrix();
+                    auto bounds = aabb.GetWorldBounds();
+                    Math::Vector3 color(0, 0.8, 0);
+
+                    DrawLine(bounds.min, Math::Vector3(bounds.max.x, bounds.min.y, bounds.min.z), color);
+                    DrawLine(bounds.min, Math::Vector3(bounds.min.x, bounds.max.y, bounds.min.z), color);
+                    DrawLine(bounds.min, Math::Vector3(bounds.min.x, bounds.min.y, bounds.max.z), color);
+
+                    DrawLine(bounds.max, Math::Vector3(bounds.min.x, bounds.max.y, bounds.max.z), color);
+                    DrawLine(bounds.max, Math::Vector3(bounds.max.x, bounds.min.y, bounds.max.z), color);
+                    DrawLine(bounds.max, Math::Vector3(bounds.max.x, bounds.max.y, bounds.min.z), color);
+
+                    DrawLine(Math::Vector3(bounds.min.x, bounds.max.y, bounds.min.z), Math::Vector3(bounds.max.x, bounds.max.y, bounds.min.z), color);
+                    DrawLine(Math::Vector3(bounds.min.x, bounds.max.y, bounds.min.z), Math::Vector3(bounds.min.x, bounds.max.y, bounds.max.z), color);
+
+                    DrawLine(Math::Vector3(bounds.max.x, bounds.min.y, bounds.max.z), Math::Vector3(bounds.max.x, bounds.min.y, bounds.min.z), color);
+                    DrawLine(Math::Vector3(bounds.max.x, bounds.min.y, bounds.max.z), Math::Vector3(bounds.min.x, bounds.min.y, bounds.max.z), color);
+
+                    DrawLine(Math::Vector3(bounds.min.x, bounds.min.y, bounds.max.z), Math::Vector3(bounds.min.x, bounds.max.y, bounds.max.z), color);
+                    DrawLine(Math::Vector3(bounds.max.x, bounds.min.y, bounds.min.z), Math::Vector3(bounds.max.x, bounds.max.y, bounds.min.z), color);
+                }
+            }
         }
     }
 #endif

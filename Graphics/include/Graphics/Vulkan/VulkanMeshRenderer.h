@@ -2,6 +2,8 @@
 
 #include <vulkan/vulkan.h>
 
+#include <unordered_map>
+
 #include "Graphics/Vulkan/VulkanContext.h"
 
 #include "Core/Components/Camera.h"
@@ -57,29 +59,23 @@ namespace Graphics
         VkPipelineCache _pipelineCache = VK_NULL_HANDLE;
         bool _hasPipelineCache = false;
 
-        uint32_t _materialLimit = 0;
-        uint32_t _meshLimit = 0;
-        uint32_t _rendererLimit = 0;
-        std::vector<BakedMaterial> _bakedMaterials;
-        std::vector<BakedMesh> _bakedMeshes;
-        std::vector<BakedRenderer> _bakedRenderers;
+        std::unordered_map<Core::Material*, BakedMaterial> _bakedMaterials;
+        std::unordered_map<Core::Mesh*, BakedMesh> _bakedMeshes;
+        std::unordered_map<Core::Renderer*, BakedRenderer> _bakedRenderers;
 
         // TODO : optimise using a cache in Core
-        BakedMaterial* FindBakedMaterial(Core::Material* material);
         BakedMaterial* BakeMaterial(Core::Material* material);
-
-        BakedMesh* FindBakedMesh(Core::Mesh* mesh);
         BakedMesh* BakeMesh(Core::Mesh* mesh);
-
-        BakedRenderer* FindBakedRenderer(Core::Renderer* renderer);
         BakedRenderer* BakeRenderer(Core::Renderer* renderer);
 	public:
-        void Init(VulkanContext* ctx, VkRenderPass renderPass, uint32_t maximumMaterials = 8, uint32_t maximumMeshes = 64, uint32_t maximumRenderers = 512);
+        void Init(VulkanContext* ctx, VkRenderPass renderPass, uint32_t materialCapacity = 8, uint32_t meshCapacity = 64, uint32_t rendererCapacity = 512);
 
         void SetupCameraProperties(Core::Camera& camera);
 
-        void PrepareRenderers(const std::vector<Core::Renderer*>& renderers);
-        void UpdateBuffers(const std::vector<Core::Renderer*>& renderers);
-		void RecordDrawCommands(VkCommandBuffer commandBuffer, const std::vector<Core::Renderer*>& renderers, float width, float height);
+        void PrepareRenderers(std::vector<Core::Renderer>& renderers);
+        void UpdateBuffers(std::vector<Core::Renderer>& renderers);
+		void RecordDrawCommands(VkCommandBuffer commandBuffer, std::vector<Core::Renderer>& renderers, float width, float height);
+
+        void Release();
 	};
 }

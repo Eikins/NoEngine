@@ -1,22 +1,18 @@
 #include "Core/GameObject.h"
 
 #include "Core/Transform.h"
-#include "Core/Components/Component.h"
-#include "Core/Scene.h"
 
 namespace Core
 {
-	Component& GameObject::AddComponent(ComponentType component)
+
+	void GameObject::Init(std::string name, Transform* parent)
 	{
-		Component& comp = _scene->CreateComponent(component);
-		comp._transform = &(_transform);
-		comp._gameObject = this;
-		_components.push_back(&comp);
-		return comp;
+		_name = name;
+		_transform = Transform(this, parent);
 	}
 
-	Transform& GameObject::GetTransform()
+	Transform* GameObject::GetTransform()
 	{
-		return _transform;
+		return &_transform;
 	}
 }

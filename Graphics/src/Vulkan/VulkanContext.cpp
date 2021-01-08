@@ -110,6 +110,22 @@ namespace Graphics
         vkFreeCommandBuffers(device, _transientCommandPool, 1, &commandBuffer);
     }
 
+    VkFormat VulkanContext::FindSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features) {
+        for (VkFormat format : candidates) {
+            VkFormatProperties props;
+            vkGetPhysicalDeviceFormatProperties(physicalDevice, format, &props);
+
+            if (tiling == VK_IMAGE_TILING_LINEAR && (props.linearTilingFeatures & features) == features) {
+                return format;
+            }
+            else if (tiling == VK_IMAGE_TILING_OPTIMAL && (props.optimalTilingFeatures & features) == features) {
+                return format;
+            }
+        }
+
+        throw std::runtime_error("Failed to find a supported format!");
+    }
+
 #pragma region Context Initialization / Destruction
     void VulkanContext::CreateInstance()
     {

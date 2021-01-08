@@ -2,11 +2,11 @@
 
 namespace Editor
 {
-	void SceneEditors::DrawSceneNode(Core::Transform* transform, int* selectionSceneIndex)
+	void SceneEditors::DrawSceneNode(Core::Transform* transform, Core::GameObject** selectedObject)
 	{
 		uint32_t flags = 0;
 		bool isClicked = false;
-		if (*selectionSceneIndex == transform->_gameObject->sceneIndex)
+		if (*selectedObject == transform->_gameObject)
 		{
 			flags |= ImGuiTreeNodeFlags_Selected;
 		}
@@ -29,7 +29,7 @@ namespace Editor
 			{
 				for (uint32_t i = 0; i < transform->_children.size(); i++)
 				{
-					DrawSceneNode(transform->_children[i], selectionSceneIndex);
+					DrawSceneNode(transform->_children[i], selectedObject);
 				}
 				ImGui::TreePop();
 			}
@@ -37,15 +37,15 @@ namespace Editor
 
 		if (isClicked)
 		{
-			*selectionSceneIndex = transform->_gameObject->sceneIndex;
+			*selectedObject = transform->_gameObject;
 		}
 	}
 
-	void SceneEditors::DrawSceneHierarchy(Core::Scene& scene, int* selectionSceneIndex)
+	void SceneEditors::DrawSceneHierarchy(std::vector<Core::Transform*>& roots, Core::GameObject** selectedObject)
 	{
-		for (uint32_t i = 0; i < scene._rootTransforms.size(); i++)
+		for (uint32_t i = 0; i < roots.size(); i++)
 		{
-			DrawSceneNode(scene._rootTransforms[i], selectionSceneIndex);
+			DrawSceneNode(roots[i], selectedObject);
 		}
 	}
 }

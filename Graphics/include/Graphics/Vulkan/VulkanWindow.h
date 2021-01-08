@@ -18,6 +18,8 @@ namespace Graphics
         virtual bool ShouldClose() override;
         virtual void PollEvents() override;
 
+        virtual Math::Vector2 GetSize() override;
+
         GLFWwindow* GetHandle() const;
 
         static void GLFWErrorCallback(int id, const char* description);

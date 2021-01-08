@@ -48,5 +48,10 @@ namespace Math
 
     Vector3& operator+=(Vector3& a, const Vector3& b);
 
+    bool operator<(const Vector3& a, const Vector3& b);
+    bool operator>(const Vector3& a, const Vector3& b);
+    bool operator<=(const Vector3& a, const Vector3& b);
+    bool operator>=(const Vector3& a, const Vector3& b);
+
     std::ostream& operator<<(std::ostream& out, const Vector3& v);
 }

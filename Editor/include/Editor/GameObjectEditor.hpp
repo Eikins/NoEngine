@@ -19,12 +19,7 @@
                 ImGui::Separator();
                 ComponentEditors::DrawTransform(gameObject._transform);
                 ImGui::Separator();
-                for (uint32_t i = 0; i < gameObject._components.size(); i++)
-                {
-                    ImGui::PushID(i);
-                    ComponentEditors::DrawComponent(gameObject._components[i]);
-                    ImGui::PopID();
-                }
+                ComponentEditors::DrawComponents(gameObject);
                 ImGui::End();
             }
 	    };

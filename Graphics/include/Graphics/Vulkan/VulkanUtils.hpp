@@ -18,6 +18,14 @@
 
 namespace Graphics
 {
+	namespace VkHelpers
+	{
+		inline bool HasStencilComponent(VkFormat format)
+		{
+			return format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT;
+		}
+	}
+
 	namespace VkCreate
 	{
 		inline VkViewport Viewport(float x, float y, float width, float height, float minDepth = 0.0f, float maxDepth = 1.0f)
@@ -334,6 +342,40 @@ namespace Graphics
 			pipelineCreateInfo.basePipelineIndex = -1;
 			pipelineCreateInfo.basePipelineHandle = VK_NULL_HANDLE;
 			return pipelineCreateInfo;
+		}
+
+		inline VkImageCreateInfo Image2DCreateInfo(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage)
+		{
+			VkImageCreateInfo imageCreateInfo{};
+			imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+			imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
+			imageCreateInfo.extent.width = width;
+			imageCreateInfo.extent.height = height;
+			imageCreateInfo.extent.depth = 1;
+			imageCreateInfo.mipLevels = 1;
+			imageCreateInfo.arrayLayers = 1;
+			imageCreateInfo.format = format;
+			imageCreateInfo.tiling = tiling;
+			imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+			imageCreateInfo.usage = usage;
+			imageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+			imageCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+			return imageCreateInfo;
+		}
+
+		inline VkImageViewCreateInfo Image2DViewCreateInfo(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags)
+		{
+			VkImageViewCreateInfo viewInfo{};
+			viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+			viewInfo.image = image;
+			viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+			viewInfo.format = format;
+			viewInfo.subresourceRange.aspectMask = aspectFlags;
+			viewInfo.subresourceRange.baseMipLevel = 0;
+			viewInfo.subresourceRange.levelCount = 1;
+			viewInfo.subresourceRange.baseArrayLayer = 0;
+			viewInfo.subresourceRange.layerCount = 1;
+			return viewInfo;
 		}
 	}
 }

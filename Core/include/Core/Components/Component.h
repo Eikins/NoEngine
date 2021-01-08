@@ -1,31 +1,19 @@
 #pragma once
 
-#include "../Transform.h"
+#include "Core/Transform.h"
+#include "Core/GameObject.h"
 
 namespace Core
 {
-	enum class ComponentType : uint8_t
-	{
-		Camera = 0,
-		Renderer = 1,
-		ScriptedBehaviour = 2
-	};
-
-	class GameObject;
-
 	class Component
 	{
-		friend class GameObject;
 	private:
-		ComponentType _type;
 		GameObject* _gameObject = nullptr;
 		Transform* _transform = nullptr;
 	protected:
-		Component(ComponentType type) : _type(type) {}
+		Component(GameObject* gameObject) : _gameObject(gameObject), _transform(gameObject->GetTransform()) {}
 	public:
 		Transform* GetTransform();
 		GameObject* GetGameObject();
-
-		ComponentType GetType();
 	};
 }

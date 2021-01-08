@@ -33,6 +33,7 @@ namespace Graphics
 
 	void VulkanBuffer::Release()
 	{
+		Unmap();
 		if (buffer != VK_NULL_HANDLE)
 		{
 			vkDestroyBuffer(_device, buffer, nullptr);

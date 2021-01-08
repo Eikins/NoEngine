@@ -6,7 +6,11 @@
 	#include "Core/Components/Camera.h"
 	#include "Core/Components/Renderer.h"
 	#include "Core/Components/ScriptedBehaviour.h"
+	#include "Core/Components/AABBCollider.h"
+	#include "Core/Components/Rigidbody.h"
 	#include "Core/Assets/Asset.h"
+
+	#include "Core/Modules/GameManager.hpp"
 
 	namespace Editor
 	{
@@ -25,6 +29,65 @@
 				}
 			}
 		public:
+			static void DrawComponents(Core::GameObject& gameObject)
+			{
+				// Camera
+				{
+					auto camera = __GameManager->GetComponent<Core::Camera>(&gameObject);
+					if (camera != nullptr)
+					{
+						ImGui::PushID(0);
+						DrawCamera(camera);
+						ImGui::PopID();
+					}
+				}
+
+				// Renderer
+				{
+					auto renderer = __GameManager->GetComponent<Core::Renderer>(&gameObject);
+					if (renderer != nullptr)
+					{
+						ImGui::PushID(1);
+						DrawRenderer(renderer);
+						ImGui::PopID();
+					}
+				}
+
+				// AABB Collider
+				{
+					auto aabb = __GameManager->GetComponent<Core::AABBCollider>(&gameObject);
+					if (aabb != nullptr)
+					{
+						ImGui::PushID(2);
+						DrawAABB(aabb);
+						ImGui::PopID();
+					}
+				}
+
+				// Rigidbody
+				{
+					auto rb = __GameManager->GetComponent<Core::Rigidbody>(&gameObject);
+					if (rb != nullptr)
+					{
+						ImGui::PushID(3);
+						DrawRigidbody(rb);
+						ImGui::PopID();
+					}
+				}
+
+				// ScriptedBehaviour
+				{
+					auto sb = __GameManager->GetComponent<Core::ScriptedBehaviour>(&gameObject);
+					if (sb != nullptr)
+					{
+						ImGui::PushID(4);
+						DrawScriptedBehaviour(sb);
+						ImGui::PopID();
+					}
+				}
+
+			}
+
 			static void DrawTransform(Core::Transform& transform)
 			{
 				if (ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen))
@@ -54,23 +117,6 @@
 						transform.SetRotation(Math::Quaternion::Identity);
 						transform.SetScale(Math::Vector3::One);
 					}
-				}
-			}
-
-			static void DrawComponent(Core::Component* component)
-			{
-				switch (component->GetType())
-				{
-				case Core::ComponentType::Camera:
-					DrawCamera(static_cast<Core::Camera*>(component));
-					break;
-				case Core::ComponentType::Renderer:
-					DrawRenderer(static_cast<Core::Renderer*>(component));
-					break;
-				case Core::ComponentType::ScriptedBehaviour:
-					DrawScriptedBehaviour(static_cast<Core::ScriptedBehaviour*>(component));
-					break;
-				default: break;
 				}
 			}
 
@@ -126,7 +172,31 @@
 						behaviour->script->DrawExposedProperties();
 					}
 				}
+			}
 
+			static void DrawAABB(Core::AABBCollider* aabb)
+			{
+				if (ImGui::CollapsingHeader("AABB Collider", ImGuiTreeNodeFlags_DefaultOpen))
+				{
+					auto& bounds = aabb->bounds;
+					auto center = bounds.Center();
+					auto size = bounds.Size();
+
+					bool changed = ImGui::DragFloat3("Center", reinterpret_cast<float*>(&center), 0.1f);
+					changed |= ImGui::DragFloat3("Size", reinterpret_cast<float*>(&size), 0.1f);
+					if (changed)
+					{
+						bounds = Math::Bounds(center, size);
+					}
+				}
+			}
+
+			static void DrawRigidbody(Core::Rigidbody* aabb)
+			{
+				if (ImGui::CollapsingHeader("Rigidbody", ImGuiTreeNodeFlags_DefaultOpen))
+				{
+
+				}
 			}
 		};
 	}

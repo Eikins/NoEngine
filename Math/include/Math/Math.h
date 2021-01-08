@@ -8,3 +8,6 @@
 #include "Matrix4x4.h"
 
 #include "Rect.h"
+#include "Bounds.h"
+
+#include "Pose.h"

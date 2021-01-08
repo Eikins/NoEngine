@@ -17,16 +17,23 @@ namespace Graphics
     void VulkanWindow::SetTitle(const std::string& title)
     {
         _descriptor.title = title;
-        glfwSetWindowTitle(static_cast<GLFWwindow*>(_handle), title.c_str());
+        glfwSetWindowTitle(_handle, title.c_str());
     }
 
     bool VulkanWindow::ShouldClose()
     {
-        return glfwWindowShouldClose(static_cast<GLFWwindow*>(_handle));
+        return glfwWindowShouldClose(_handle);
     }
 
     void VulkanWindow::PollEvents()
     {
         glfwPollEvents();
+    }
+
+    Math::Vector2 VulkanWindow::GetSize()
+    {
+        int width, height;
+        glfwGetFramebufferSize(_handle, &width, &height);
+        return Math::Vector2(width, height);
     }
 }

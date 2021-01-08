@@ -6,10 +6,10 @@ namespace Core
 {
 #pragma region Constructor / Destructor
 
-    Transform::Transform(GameObject* gameObject)
+    Transform::Transform(GameObject* gameObject, Transform* parent)
     {
-        _parent = nullptr;
         _gameObject = gameObject;
+        SetParent(parent);
     }
 
     Transform::~Transform()

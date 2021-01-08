@@ -1,6 +1,8 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
+#include <array>
+
 #include "Graphics/GraphicsContext.h"
 #include "Graphics/Vulkan/VulkanSwapchain.h"
 #include "Graphics/Vulkan/VulkanWindow.h"
@@ -9,6 +11,8 @@
 #include "Graphics/Vulkan/VulkanImGui.h"
 
 #include "Graphics/imgui/imgui_impl_glfw.h"
+
+#include "Graphics/Vulkan/VulkanUtils.hpp"
 
 namespace Graphics
 {
@@ -26,23 +30,33 @@ namespace Graphics
         VulkanImGui _vkImGui;
 #endif
 
+        // Global Render Pass resources
         VkCommandBuffer _commandBuffer = VK_NULL_HANDLE;;
         VkRenderPass _renderPass = VK_NULL_HANDLE;
+        // We create one framebuffer per swapchain image
         std::vector<VkFramebuffer> _framebuffers;
-
+        // We need one depth buffer that we will reuse internally
+        struct {
+            VkFormat format;
+            VkImage image;
+            VkDeviceMemory memory;
+            VkImageView view;
+        } _depth;
+        
         VkSemaphore _imageAvailableSemaphore = VK_NULL_HANDLE;
         VkSemaphore _renderFinishedSemaphore = VK_NULL_HANDLE;
         uint32_t _imageIndex;
 
         bool _framebufferResized = false;
 
-        void PrepareRenderers(const std::vector<Core::Renderer*>& renderers)
+        void PrepareRenderers(std::vector<Core::Renderer>& renderers)
         {
             _meshRenderer.PrepareRenderers(renderers);
         }
 
         void SetupCameraProperties(Core::Camera& camera)
         {
+            camera.SetAspectRatio(static_cast<float>(_swapchain.extent.width) / _swapchain.extent.height);
             _meshRenderer.SetupCameraProperties(camera);
         }
 
@@ -64,7 +78,9 @@ namespace Graphics
 
             _commandBuffer = _vkContext.CreateCommandBuffer(true);
 
-            VkClearValue clearColor = { 0.0f, 0.0f, 0.0f, 1.0f };
+            std::array<VkClearValue, 2> clearValues{};
+            clearValues[0].color = { 0.0f, 0.0f, 0.0f, 1.0f };
+            clearValues[1].depthStencil = { 1.0f, 0 };
 
             VkRenderPassBeginInfo renderPassInfo{};
             renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -72,8 +88,8 @@ namespace Graphics
             renderPassInfo.framebuffer = _framebuffers[_imageIndex];
             renderPassInfo.renderArea.offset = { 0, 0 };
             renderPassInfo.renderArea.extent = _swapchain.extent;
-            renderPassInfo.clearValueCount = 1;
-            renderPassInfo.pClearValues = &clearColor;
+            renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
+            renderPassInfo.pClearValues = clearValues.data();
 
             vkCmdBeginRenderPass(_commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
             return true;
@@ -84,7 +100,7 @@ namespace Graphics
             vkCmdEndRenderPass(_commandBuffer);
         }
 
-        void DrawRenderers(const std::vector<Core::Renderer*>& renderers)
+        void DrawRenderers(std::vector<Core::Renderer>& renderers)
         {
             _meshRenderer.UpdateBuffers(renderers);
             auto extent = _swapchain.extent;
@@ -154,13 +170,19 @@ namespace Graphics
         {
             vkDeviceWaitIdle(_vkContext.device);
 
+            vkDestroyImageView(_vkContext.device, _depth.view, nullptr);
+            vkDestroyImage(_vkContext.device, _depth.image, nullptr);
+            vkFreeMemory(_vkContext.device, _depth.memory, nullptr);
+
             for (uint32_t i = 0; i < _framebuffers.size(); i++)
             {
                 vkDestroyFramebuffer(_vkContext.device, _framebuffers[i], nullptr);
             }
+
             vkDestroySemaphore(_vkContext.device, _imageAvailableSemaphore, nullptr);
             vkDestroySemaphore(_vkContext.device, _renderFinishedSemaphore, nullptr);
             _vkImGui.Release();
+            _meshRenderer.Release();
             vkDestroyRenderPass(_vkContext.device, _renderPass, nullptr);
             _swapchain.Release();
             _vkContext.Release();
@@ -171,6 +193,12 @@ namespace Graphics
 
         void CreateResources()
         {
+            _depth.format = _vkContext.FindSupportedFormat(
+                { VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT },
+                VK_IMAGE_TILING_OPTIMAL,
+                VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT
+            );
+
             // Create Render Pass
             {
                 // TODO : Create a RenderPass object
@@ -188,23 +216,40 @@ namespace Graphics
                 colorAttachmentRef.attachment = 0;
                 colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
+                VkAttachmentDescription depthAttachment{};
+                depthAttachment.format = _depth.format;
+                depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+                depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+                depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+                depthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+                depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+                depthAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+                depthAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+                VkAttachmentReference depthAttachmentRef{};
+                depthAttachmentRef.attachment = 1;
+                depthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
                 VkSubpassDescription subpass{};
                 subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
                 subpass.colorAttachmentCount = 1;
                 subpass.pColorAttachments = &colorAttachmentRef;
+                subpass.pDepthStencilAttachment = &depthAttachmentRef;
 
                 VkSubpassDependency dependency{};
                 dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
                 dependency.dstSubpass = 0;
-                dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+                dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
                 dependency.srcAccessMask = 0;
-                dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-                dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+                dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+                dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+
+                std::array<VkAttachmentDescription, 2> attachments = { colorAttachment, depthAttachment };
 
                 VkRenderPassCreateInfo renderPassInfo{};
                 renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-                renderPassInfo.attachmentCount = 1;
-                renderPassInfo.pAttachments = &colorAttachment;
+                renderPassInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
+                renderPassInfo.pAttachments = attachments.data();
                 renderPassInfo.subpassCount = 1;
                 renderPassInfo.pSubpasses = &subpass;
                 renderPassInfo.dependencyCount = 1;
@@ -216,6 +261,7 @@ namespace Graphics
             }
 
             // Create Frambuffers
+            CreateDepthResources();
             CreateFramebuffers();
 
             // Create Semaphores
@@ -237,15 +283,16 @@ namespace Graphics
             _framebuffers.resize(imageCount);
 
             for (size_t i = 0; i < imageCount; i++) {
-                VkImageView attachments[] = {
-                    _swapchain.GetImageView(i)
+                std::array<VkImageView, 2> attachments = {
+                    _swapchain.GetImageView(i),
+                    _depth.view
                 };
 
                 VkFramebufferCreateInfo framebufferInfo{};
                 framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
                 framebufferInfo.renderPass = _renderPass;
-                framebufferInfo.attachmentCount = 1;
-                framebufferInfo.pAttachments = attachments;
+                framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());;
+                framebufferInfo.pAttachments = attachments.data();
                 framebufferInfo.width = _swapchain.extent.width;
                 framebufferInfo.height = _swapchain.extent.height;
                 framebufferInfo.layers = 1;
@@ -256,15 +303,58 @@ namespace Graphics
             }
         }
 
+        void CreateDepthResources()
+        {
+            // Create Image
+            {
+                auto imageCreateInfo = VkCreate::Image2DCreateInfo(
+                    _swapchain.extent.width, _swapchain.extent.height, _depth.format,
+                    VK_IMAGE_TILING_OPTIMAL,
+                    VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT
+                );
+
+                if (vkCreateImage(_vkContext.device, &imageCreateInfo, nullptr, &_depth.image) != VK_SUCCESS)
+                {
+                    throw std::runtime_error("Couldn't create depth image !");
+                }
+                VkMemoryRequirements memReqs{};
+                vkGetImageMemoryRequirements(_vkContext.device, _depth.image, &memReqs);
+                auto memAllocInfo = VkCreate::MemoryAllocateInfo();
+                memAllocInfo.allocationSize = memReqs.size;
+                memAllocInfo.memoryTypeIndex = _vkContext.FindMemoryType(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+                if (vkAllocateMemory(_vkContext.device, &memAllocInfo, nullptr, &_depth.memory) != VK_SUCCESS) {
+                    throw std::runtime_error("Couldn't create depth image memory !");
+                }
+                vkBindImageMemory(_vkContext.device, _depth.image, _depth.memory, 0);
+            }
+
+            // Create the image view
+            {
+                auto imageViewCreateInfo = VkCreate::Image2DViewCreateInfo(_depth.image, _depth.format, VK_IMAGE_ASPECT_DEPTH_BIT);
+                if (vkCreateImageView(_vkContext.device, &imageViewCreateInfo, nullptr, &_depth.view) != VK_SUCCESS) {
+                    throw std::runtime_error("Couldn't create depth image view !");
+                }
+            }
+
+        }
+
         void OnWindowResize(uint32_t width, uint32_t height)
         {
             WaitForRenderCompletion();
             _swapchain.Recreate(width, height);
+
+            vkDestroyImageView(_vkContext.device, _depth.view, nullptr);
+            vkDestroyImage(_vkContext.device, _depth.image, nullptr);
+            vkFreeMemory(_vkContext.device, _depth.memory, nullptr);
             for (uint32_t i = 0; i < _framebuffers.size(); i++)
             {
                 vkDestroyFramebuffer(_vkContext.device, _framebuffers[i], nullptr);
             }
+
+            CreateDepthResources();
             CreateFramebuffers();
+
             _framebufferResized = false;
         }
 
@@ -304,12 +394,12 @@ namespace Graphics
         return *_window;
     }
 
-    void GraphicsContext::PrepareRenderers(const std::vector<Core::Renderer*>& renderers) { _impl->PrepareRenderers(renderers); }
+    void GraphicsContext::PrepareRenderers(std::vector<Core::Renderer>& renderers) { _impl->PrepareRenderers(renderers); }
     void GraphicsContext::SetupCameraProperties(Core::Camera& camera) { _impl->SetupCameraProperties(camera); }
 
     bool GraphicsContext::BeginFrame() { return _impl->BeginFrame(); }
     void GraphicsContext::EndFrame() { _impl->EndFrame(); }
-    void GraphicsContext::DrawRenderers(const std::vector<Core::Renderer*>& renderers) { _impl->DrawRenderers(renderers); }
+    void GraphicsContext::DrawRenderers(std::vector<Core::Renderer>& renderers) { _impl->DrawRenderers(renderers); }
 
     void GraphicsContext::BeginEditorFrame() { _impl->BeginEditorFrame(); }
     void GraphicsContext::EndEditorFrame() { _impl->EndEditorFrame(); }

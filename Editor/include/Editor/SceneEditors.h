@@ -3,16 +3,18 @@
 #ifdef NoEngine_Editor
 	#include "imgui.h"
 
-	#include "Core/Scene.h"
+	#include "Core/Assets/Scene.h"
+	#include "Core/Transform.h"
+	#include "Core/GameObject.h"
 
 	namespace Editor
 	{
 		class SceneEditors
 		{
 		private:
-			static void DrawSceneNode(Core::Transform* transform, int* selectionSceneIndex);
+			static void DrawSceneNode(Core::Transform* transform, Core::GameObject** selectedObject);
 		public:
-			static void DrawSceneHierarchy(Core::Scene& scene, int* selectionSceneIndex);
+			static void DrawSceneHierarchy(std::vector<Core::Transform*>& roots, Core::GameObject** selectedObject);
 		};
 	}
 #endif

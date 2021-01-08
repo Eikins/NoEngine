@@ -11,7 +11,6 @@ namespace Core
 		Transparent = 1 << 1
 	};
 
-
 	RenderingLayer operator|(RenderingLayer lhs, RenderingLayer rhs);
 	RenderingLayer operator&(const RenderingLayer& lhs, RenderingLayer rhs);
 

@@ -10,42 +10,9 @@ namespace Graphics
 		_constantBuffer.projectionMatrix = camera.GetProjectionMatrix();
 	}
 
-	VulkanMeshRenderer::BakedMaterial* VulkanMeshRenderer::FindBakedMaterial(Core::Material* material)
-	{
-		for (int i = 0; i < _bakedMaterials.size(); i++)
-		{
-			if (_bakedMaterials[i].material == material) return &_bakedMaterials[i];
-		}
-		return nullptr;
-	}
-
-	VulkanMeshRenderer::BakedMesh* VulkanMeshRenderer::FindBakedMesh(Core::Mesh* mesh)
-	{
-		for (int i = 0; i < _bakedMeshes.size(); i++)
-		{
-			if (_bakedMeshes[i].mesh == mesh) return &_bakedMeshes[i];
-		}
-		return nullptr;
-	}
-
-	VulkanMeshRenderer::BakedRenderer* VulkanMeshRenderer::FindBakedRenderer(Core::Renderer* renderer)
-	{
-		for (int i = 0; i < _bakedRenderers.size(); i++)
-		{
-			if (_bakedRenderers[i].renderer == renderer) return &_bakedRenderers[i];
-		}
-		return nullptr;
-	}
-
 	VulkanMeshRenderer::BakedMaterial* VulkanMeshRenderer::BakeMaterial(Core::Material* material)
 	{
-		uint32_t index = _bakedMaterials.size();
-		if (index >= _materialLimit)
-		{
-			throw std::runtime_error("Maximum material limit exceeded...");
-		}
-		_bakedMaterials.push_back(BakedMaterial());
-		auto& bakedMaterial = _bakedMaterials[index];
+		BakedMaterial& bakedMaterial = _bakedMaterials.insert(std::make_pair(material, BakedMaterial())).first->second;
 		bakedMaterial.material = material;
 
 		// Create Layouts
@@ -166,9 +133,9 @@ namespace Graphics
 			pipelineCreateInfo.stageCount = 2;
 			pipelineCreateInfo.pStages = shaderStages;
 
-			if (vkCreateGraphicsPipelines(_context->device, nullptr, 1, &pipelineCreateInfo, nullptr, &bakedMaterial.pipeline))
+			if (vkCreateGraphicsPipelines(_context->device, _pipelineCache, 1, &pipelineCreateInfo, nullptr, &bakedMaterial.pipeline))
 			{
-				throw std::runtime_error("Couldn't create ImGui pipeline !");
+				throw std::runtime_error("Couldn't create material pipeline !");
 			}
 
 			vkDestroyShaderModule(_context->device, vertexShaderModule, nullptr);
@@ -180,13 +147,7 @@ namespace Graphics
 
 	VulkanMeshRenderer::BakedMesh* VulkanMeshRenderer::BakeMesh(Core::Mesh* mesh)
 	{
-		uint32_t index = _bakedMeshes.size();
-		if (index >= _meshLimit)
-		{
-			throw std::runtime_error("Maximum mesh limit exceeded...");
-		}
-		_bakedMeshes.push_back(BakedMesh());
-		auto& bakedMesh = _bakedMeshes[index];
+		BakedMesh& bakedMesh = _bakedMeshes.insert(std::make_pair(mesh, BakedMesh())).first->second;
 		bakedMesh.mesh = mesh;
 
 		auto vertices = mesh->GenerateInterleavedData();
@@ -230,31 +191,31 @@ namespace Graphics
 
 	VulkanMeshRenderer::BakedRenderer* VulkanMeshRenderer::BakeRenderer(Core::Renderer* renderer)
 	{
-		uint32_t index = _bakedRenderers.size();
-		if (index >= _rendererLimit)
-		{
-			throw std::runtime_error("Maximum renderer limit exceeded...");
-		}
-		_bakedRenderers.push_back(BakedRenderer());
-		auto& bakedRenderer = _bakedRenderers[index];
+		BakedRenderer& bakedRenderer = _bakedRenderers.insert(std::make_pair(renderer, BakedRenderer())).first->second;
 		bakedRenderer.renderer = renderer;
-		auto bakedMaterial = FindBakedMaterial(renderer->material);
-		if (bakedMaterial == nullptr)
+
+		auto bakedMaterialIt = _bakedMaterials.find(renderer->material);
+		if (bakedMaterialIt == _bakedMaterials.end())
 		{
-			bakedMaterial = BakeMaterial(renderer->material);
+			bakedRenderer.bakedMaterial = BakeMaterial(renderer->material);
+		}
+		else
+		{
+			bakedRenderer.bakedMaterial = &bakedMaterialIt->second;
 		}
 
-		auto bakedMesh = FindBakedMesh(renderer->mesh);
-		if (bakedMesh == nullptr)
+		auto bakedMeshIt = _bakedMeshes.find(renderer->mesh);
+		if (bakedMeshIt == _bakedMeshes.end())
 		{
-			bakedMesh = BakeMesh(renderer->mesh);
+			bakedRenderer.bakedMesh = BakeMesh(renderer->mesh);
 		}
-
-		bakedRenderer.bakedMaterial = bakedMaterial;
-		bakedRenderer.bakedMesh = bakedMesh;
+		else
+		{
+			bakedRenderer.bakedMesh = &bakedMeshIt->second;
+		}
 
 		// Create Descriptor set
-		auto descriptorSetAllocateInfo = VkCreate::DescriptorSetAllocateInfo(_descriptorPool, &bakedMaterial->descriptorSetLayout, 1);
+		auto descriptorSetAllocateInfo = VkCreate::DescriptorSetAllocateInfo(_descriptorPool, &bakedRenderer.bakedMaterial->descriptorSetLayout, 1);
 		if (vkAllocateDescriptorSets(_context->device, &descriptorSetAllocateInfo, &bakedRenderer.descriptorSet) != VK_SUCCESS)
 		{
 			throw std::runtime_error("Couldn't create mesh descriptor set !");
@@ -279,39 +240,42 @@ namespace Graphics
 		return &bakedRenderer;
 	}
 
-	void VulkanMeshRenderer::PrepareRenderers(const std::vector<Core::Renderer*>& renderers)
+	void VulkanMeshRenderer::PrepareRenderers(std::vector<Core::Renderer>& renderers)
 	{
 		for (int i = 0; i < renderers.size(); i++)
 		{
-			auto renderer = renderers[i];
-			auto bakedRenderer = FindBakedRenderer(renderer);
-			if (bakedRenderer == nullptr)
+			auto renderer = &renderers[i];
+			auto bakedRendererIt = _bakedRenderers.find(renderer);
+
+			if (bakedRendererIt == _bakedRenderers.end())
 			{
-				bakedRenderer = BakeRenderer(renderer);
+				BakeRenderer(renderer);
 			}
 		}
 	}
 
-	void VulkanMeshRenderer::UpdateBuffers(const std::vector<Core::Renderer*>& renderers)
+	void VulkanMeshRenderer::UpdateBuffers(std::vector<Core::Renderer>& renderers)
 	{
 		for (int i = 0; i < renderers.size(); i++)
 		{
-			auto renderer = renderers[i];
-			auto bakedRenderer = FindBakedRenderer(renderer);
-			if (bakedRenderer != nullptr)
+			auto renderer = &renderers[i];
+			auto bakedRendererIt = _bakedRenderers.find(renderer);
+
+			if (bakedRendererIt != _bakedRenderers.end())
 			{
+				auto& bakedRenderer = bakedRendererIt->second;
 				MeshPerObjectBuffer perObjectBufferData
 				{
 					renderer->GetTransform()->GetLocalToWorldMatrix()
 				};
 
-				memcpy(bakedRenderer->perObjectBuffer.mappedMemory, &perObjectBufferData, sizeof(perObjectBufferData));
-				bakedRenderer->perObjectBuffer.Flush();
+				memcpy(bakedRenderer.perObjectBuffer.mappedMemory, &perObjectBufferData, sizeof(perObjectBufferData));
+				bakedRenderer.perObjectBuffer.Flush();
 			}
 		}
 	}
 
-	void VulkanMeshRenderer::RecordDrawCommands(VkCommandBuffer commandBuffer, const std::vector<Core::Renderer*>& renderers, float width, float height)
+	void VulkanMeshRenderer::RecordDrawCommands(VkCommandBuffer commandBuffer, std::vector<Core::Renderer>& renderers, float width, float height)
 	{
 		VkViewport viewport = VkCreate::Viewport(0, 0, width, height);
 		auto scissor = VkCreate::Rect2D(0, 0, width, height);
@@ -323,16 +287,17 @@ namespace Graphics
 
 		for (int i = 0; i < renderers.size(); i++)
 		{
-			auto renderer = renderers[i];
-			auto bakedRenderer = FindBakedRenderer(renderer);
-			if (bakedRenderer != nullptr)
-			{
-				auto bakedMaterial = bakedRenderer->bakedMaterial;
-				auto bakedMesh = bakedRenderer->bakedMesh;
+			auto renderer = &renderers[i];
+			auto bakedRendererIt = _bakedRenderers.find(renderer);
 
+			if (bakedRendererIt != _bakedRenderers.end())
+			{
+				auto& bakedRenderer = bakedRendererIt->second;
+				auto bakedMaterial = bakedRenderer.bakedMaterial;
+				auto bakedMesh = bakedRenderer.bakedMesh;
 				vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, bakedMaterial->pipeline);
 				vkCmdPushConstants(commandBuffer, bakedMaterial->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(ConstantBuffer), &_constantBuffer);
-				vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, bakedMaterial->pipelineLayout, 0, 1, &bakedRenderer->descriptorSet, 0, nullptr);
+				vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, bakedMaterial->pipelineLayout, 0, 1, &bakedRenderer.descriptorSet, 0, nullptr);
 				vkCmdBindVertexBuffers(commandBuffer, 0, 1, &bakedMesh->vertices.buffer, offsets);
 				vkCmdBindIndexBuffer(commandBuffer, bakedMesh->indices.buffer, 0, VK_INDEX_TYPE_UINT16);
 				vkCmdDrawIndexed(commandBuffer, bakedMesh->indexCount, 1, 0, 0, 0);
@@ -343,9 +308,6 @@ namespace Graphics
 	void VulkanMeshRenderer::Init(VulkanContext* ctx, VkRenderPass renderPass, uint32_t maximumMaterials, uint32_t maximumMeshes, uint32_t maximumRenderers)
 	{
 		_context = ctx;
-		_materialLimit = maximumMaterials;
-		_meshLimit = maximumMeshes;
-		_rendererLimit = maximumRenderers;
 
 		_bakedMaterials.reserve(maximumMaterials);
 		_bakedMeshes.reserve(maximumMeshes);
@@ -375,5 +337,29 @@ namespace Graphics
 		{
 			throw std::runtime_error("Couldn't create mesh renderer descriptor pool !");
 		}
+	}
+
+	void VulkanMeshRenderer::Release()
+	{
+		for (auto& it : _bakedMeshes) {
+			auto& bakedMesh = it.second;
+			bakedMesh.vertices.Release();
+			bakedMesh.indices.Release();
+		}
+
+		for (auto& it : _bakedMaterials) {
+			auto& bakedMaterial = it.second;
+			vkDestroyPipeline(_context->device, bakedMaterial.pipeline, nullptr);
+			vkDestroyPipelineLayout(_context->device, bakedMaterial.pipelineLayout, nullptr);
+			vkDestroyDescriptorSetLayout(_context->device, bakedMaterial.descriptorSetLayout, nullptr);
+		}
+
+		for (auto& it : _bakedRenderers) {
+			auto& bakedRenderer = it.second;
+			bakedRenderer.perObjectBuffer.Release();
+		}
+
+		vkDestroyDescriptorPool(_context->device, _descriptorPool, nullptr);
+		vkDestroyPipelineCache(_context->device, _pipelineCache, nullptr);
 	}
 }

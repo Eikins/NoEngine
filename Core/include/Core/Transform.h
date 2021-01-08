@@ -44,8 +44,8 @@ namespace Core
 
         bool HasParentChanged();
     
+        Transform(GameObject* gameObject, Transform* parent);
         Transform() {}
-        Transform(GameObject* gameObject);
     public:
         ~Transform();
 
@@ -53,7 +53,6 @@ namespace Core
         
         // Hierarchy
         // TODO: Adapt scene to support parental modifications
-    private:
         void SetParent(Transform* parent);
     public:
         void AddChild(Transform* child);
@@ -63,6 +62,13 @@ namespace Core
         void SetPosition(const Math::Vector3& position);
         void SetRotation(const Math::Quaternion& rotation);
         void SetScale(const Math::Vector3& scale);
+
+        inline Math::Vector3 GetPosition() const { return _position; }
+        inline Math::Quaternion GetRotation() const { return _rotation; }
+        inline Math::Vector3 GetScale() const { return _scale; }
+
+        inline Math::Vector3 GetWorldPosition() { return GetLocalToWorldMatrix().GetTranslation(); }
+        inline Math::Vector3 GetLossyScale() { return GetLocalToWorldMatrix().GetScale(); }
 
         void Translate(const Math::Vector3& translation);
         void Rotate(const Math::Quaternion& rotation);

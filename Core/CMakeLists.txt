@@ -12,9 +12,29 @@ add_executable (NoEngine
 	"src/Assets/Mesh.cpp" 
 	"src/Components/Component.cpp" 
 	"src/GameObject.cpp" 
-	"src/Scene.cpp" 
+	"src/Assets/Scene.cpp" 
 	"src/Assets/Material.cpp"
-	"src/Assets/Asset.cpp" "include/Core/Input/InputManager.h" "include/Core/Layer.h" "src/Layer.cpp" "src/Components/Renderer.cpp" "src/Assets/Shader.cpp" "include/Core/Assets/Script.h" "include/Core/Components/ScriptedBehaviour.h" "src/Components/ScriptedBehaviour.cpp")
+	"src/Assets/Asset.cpp"
+	"include/Core/Input/InputManager.h"
+	"include/Core/Layer.h"
+	"src/Layer.cpp"
+	"src/Components/Renderer.cpp"
+	"src/Assets/Shader.cpp"
+	"include/Core/Assets/Script.h"
+	"include/Core/Components/ScriptedBehaviour.h"
+	"src/Components/ScriptedBehaviour.cpp"
+	"include/Utils/MemoryPools.hpp"
+	"include/Core/Components/AABBCollider.h"
+	"include/Core/Modules/ComponentContainer.hpp"
+	"include/Core/Modules/ComponentManager.hpp"
+	"include/Core/Modules/GameObjectManager.h"
+	"src/Modules/GameObjectManager.cpp"
+	"include/Core/Modules/GameManager.hpp"
+	"src/Modules/GameManager.cpp"
+	"include/Core/Systems/System.h"
+	"include/Core/Modules/SystemManager.hpp"
+ "src/Modules/SystemManager.cpp"
+ "include/Core/Systems/PhysicsSystem.h" "src/Systems/PhysicsSystem.cpp" "include/Core/Systems/CollisionSystem.h" "include/Core/Components/Collider.h" "src/Systems/CollisionSystem.cpp" "include/Core/Components/Rigidbody.h")
 
 add_dependencies(NoEngine Math)
 add_dependencies(NoEngine Graphics)

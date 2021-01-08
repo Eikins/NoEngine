@@ -3,7 +3,7 @@
 
 # Add source to this project's executable.
 add_library(Math STATIC 
-	"src/Util.cpp"
+	
 	"src/Vector2.cpp"
 	"src/Vector3.cpp"
 	"src/Vector4.cpp"
@@ -11,6 +11,7 @@ add_library(Math STATIC
 	"src/Rect.cpp"
 
 	"src/Matrix4x4.cpp"
+	"src/Bounds.cpp"
 )
 
 target_include_directories(Math PUBLIC 

@@ -2,6 +2,8 @@
 
 #include <string>
 
+#include "Math/Vector2.h"
+
 namespace Graphics
 {
     struct WindowDescriptor
@@ -21,6 +23,8 @@ namespace Graphics
 
         virtual bool ShouldClose() = 0;
         virtual void PollEvents() = 0;
+
+        virtual Math::Vector2 GetSize() = 0;
 
         WindowDescriptor GetDescriptor() { return _descriptor; }
     };

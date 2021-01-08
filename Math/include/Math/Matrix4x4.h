@@ -50,6 +50,15 @@ namespace Math
         void SetRow(int i, const Vector4& values);
         void SetColumn(int i, const Vector4& values);
 
+        inline Vector3 GetTranslation() { return Vector3(m_0_3, m_1_3, m_2_3); }
+        inline Vector3 GetScale() {
+            return Vector3(
+                Vector3::Length(Vector3(m_0_0, m_1_0, m_2_0)),
+                Vector3::Length(Vector3(m_0_1, m_1_1, m_2_1)),
+                Vector3::Length(Vector3(m_0_2, m_1_2, m_2_2))
+            );
+        }
+
         // Value accessors, prefer using direct access to avoid overhead
         // Useful for prototyping algorithms
         float& operator()(int row, int col);
