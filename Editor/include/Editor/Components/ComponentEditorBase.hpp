@@ -226,7 +226,7 @@
 							case Scripting::FieldType::FLOAT:
 								{
 									float value = behaviour->GetInstance().GetFieldValue<float>(field.handle);
-									if (ImGui::DragFloat(name.c_str(), &value))
+									if (ImGui::DragFloat(name.c_str(), &value, 0.1f))
 									{
 										behaviour->GetInstance().SetFieldValue<float>(field.handle, value);
 									}

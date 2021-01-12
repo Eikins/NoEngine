@@ -43,21 +43,19 @@ class NoEngine
     GameManager _gameManager;
     PhysicsSystem* _physics = nullptr;
     CollisionSystem* _collisionWorld = nullptr;
-    GraphicsSystem* _graphics;
-    ScriptSystem* _scripts;
+    GraphicsSystem* _graphics = nullptr;
+    ScriptSystem* _scripts = nullptr;
 
     InputMaster _inputMaster;
-
-    Camera* _mainCamera;
 
     void RegisterComponents()
     {
         _gameManager.RegisterComponent<Camera>();
         _gameManager.RegisterComponent<Renderer>();
         _gameManager.RegisterComponent<AABBCollider>();
-        _gameManager.RegisterComponent<ScriptedBehaviour>();
         _gameManager.RegisterComponent<Rigidbody>();
         _gameManager.RegisterComponent<Light>();
+        _gameManager.RegisterComponent<ScriptedBehaviour>();
     }
 
     void RegisterSystems()
@@ -73,6 +71,7 @@ class NoEngine
         _gameManager.SetSystemSignature<ScriptSystem>(_scripts->CreateSignature());
 
         _physics->BindCollisionWorld(_collisionWorld);
+        _scripts->InitRuntime();
     }
 
 public:
@@ -106,7 +105,8 @@ public:
             {"Color", MaterialPropertyType::COLOR},
             {"IndirectColor", MaterialPropertyType::COLOR}
         });
-
+        clownfishMaterial.GetPropertyBlock().SetVector("Color", Math::Vector4(0.2, 0.2, 0.8, 1.0));
+        clownfishMaterial.GetPropertyBlock().SetVector("IndirectColor", Math::Vector4(0.05, 0.05, 0.15, 1.0));
 
         Script sinWaveScript("SinWave", "Scripts/SinWave.cs");
 
@@ -114,30 +114,22 @@ public:
         GameObject* cameraObject = _gameManager.CreateGameObject("Main Camera");
         GameObject* mainLightObject = _gameManager.CreateGameObject("Main Light");
         GameObject* emptyObject = _gameManager.CreateGameObject("Empty");
-        GameObject* barracudaObject = _gameManager.CreateGameObject("Barracuda", emptyObject->GetTransform());
+        GameObject* barracudaObject = _gameManager.CreateGameObject("Barracuda");
         GameObject* clownfishObject = _gameManager.CreateGameObject("Clownfish");
         GameObject* groundObject = _gameManager.CreateGameObject("Ground");
 
         scene.rootTransforms.push_back(cameraObject->GetTransform());
         scene.rootTransforms.push_back(mainLightObject->GetTransform());
         scene.rootTransforms.push_back(emptyObject->GetTransform());
+        scene.rootTransforms.push_back(barracudaObject->GetTransform());
         scene.rootTransforms.push_back(clownfishObject->GetTransform());
         scene.rootTransforms.push_back(groundObject->GetTransform());
 
         // Components
-        _mainCamera = &_gameManager.AddComponent<Camera>(cameraObject);
+        Camera& mainCamera = _gameManager.AddComponent<Camera>(cameraObject);
 
         auto& light = _gameManager.AddComponent<Light>(mainLightObject);
         light._type = LightType::DIRECTIONAL;
-
-        auto& barracudaRenderer = _gameManager.AddComponent<Renderer>(barracudaObject);
-        auto& barracudaAABB = _gameManager.AddComponent<AABBCollider>(barracudaObject);
-        auto& barracudaScript = _gameManager.AddComponent<ScriptedBehaviour>(barracudaObject);
-        auto& barracudaRb = _gameManager.AddComponent<Rigidbody>(barracudaObject);
-        barracudaRenderer.mesh = &barracudaMeshes[0];
-        barracudaRenderer.material = &barracudaMaterial;
-        barracudaAABB.bounds = Bounds(Vector3(0, 0.7f, 0), Vector3(10, 2, 1));
-        barracudaScript.script = &sinWaveScript;
 
         auto& clownfishRenderer = _gameManager.AddComponent<Renderer>(clownfishObject);
         auto& clownfishAABB = _gameManager.AddComponent<AABBCollider>(clownfishObject);
@@ -149,6 +141,16 @@ public:
         auto& groundAABB = _gameManager.AddComponent<AABBCollider>(groundObject);
         groundAABB.bounds = Bounds(Vector3::Zero, Vector3(20, 2, 20));
 
+        auto& barracudaRenderer = _gameManager.AddComponent<Renderer>(barracudaObject);
+        auto& barracudaAABB = _gameManager.AddComponent<AABBCollider>(barracudaObject);
+        auto& barracudaRb = _gameManager.AddComponent<Rigidbody>(barracudaObject);
+        barracudaRenderer.mesh = &barracudaMeshes[0];
+        barracudaRenderer.material = &barracudaMaterial;
+        barracudaAABB.bounds = Bounds(Vector3(0, 0.7f, 0), Vector3(10, 2, 1));
+
+        auto& barracudaScript = _gameManager.AddComponent<ScriptedBehaviour>(barracudaObject);
+        barracudaScript.script = &sinWaveScript;
+
         // Set Transforms
         emptyObject->GetTransform()->SetScale(Vector3::One * 0.2f);
         cameraObject->GetTransform()->SetPosition(Vector3(0, 0, -10));
@@ -158,7 +160,11 @@ public:
 
         _gameManager.SetScene(&scene);
 
-        _scripts->InitRuntime();
+#ifdef NoEngine_Editor
+        Editor::CreateContext(_gameManager);
+        Editor::SetEditorScale(2);
+#endif
+
         _scripts->CompileAndLoadCore();
         _scripts->CompileAndLoadScripts();
 
@@ -169,12 +175,7 @@ public:
             windowDescriptor.height = 1080;
             windowDescriptor.resizable = true;
             windowDescriptor.title = "Vulkan Application";
-            _mainCamera->SetAspectRatio(static_cast<float>(windowDescriptor.width) / windowDescriptor.height);
-
-#ifdef NoEngine_Editor
-            Editor::CreateContext(_gameManager);
-            Editor::SetEditorScale(2);
-#endif
+            mainCamera.SetAspectRatio(static_cast<float>(windowDescriptor.width) / windowDescriptor.height);
 
             _graphics->CreateContext(windowDescriptor);
             _graphics->BindInputMaster(&_inputMaster);
@@ -187,7 +188,7 @@ public:
             while (window.ShouldClose() == false)
             {
                 window.PollEvents();
-                if (_graphics->RenderAsync(_mainCamera))
+                if (_graphics->RenderAsync(&mainCamera))
                 {
                     _physics->Integrate(Time::deltaTime);
                     _scripts->Update();

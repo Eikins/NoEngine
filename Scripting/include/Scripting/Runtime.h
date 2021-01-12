@@ -8,6 +8,8 @@
 #include "Environment.h"
 #include "ScriptInstance.h"
 
+#include "Core/Transform.h"
+
 namespace Scripting
 {
 	class Runtime
@@ -29,7 +31,7 @@ namespace Scripting
 		void UnloadAssembly(const std::string& name);
 
 		void RegisterInternalCall(const std::string& name, void* method);
-		void BindScript(const std::string& assembly, ScriptInstance& script);
+		void BindScript(const std::string& assembly, ScriptInstance& script, Core::Transform* transform);
 
 		inline Environment& GetEnvironment() { return _mainEnvironment; }
 	};

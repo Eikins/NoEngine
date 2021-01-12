@@ -15,7 +15,6 @@ namespace Core
 	{
 	private:
 		Scripting::Runtime _runtime;
-		
 	public:
 		virtual Signature CreateSignature() override;
 

@@ -40,6 +40,7 @@ namespace Scripting
 
 	void Runtime::Shutdown()
 	{
+		mono_jit_cleanup(_domain);
 	}
 
 	void Runtime::Compile(const std::string& output, const std::string& files)
@@ -84,8 +85,8 @@ namespace Scripting
 		mono_add_internal_call(name.c_str(), method);
 	}
 
-	void Runtime::BindScript(const std::string& assembly, ScriptInstance& script)
+	void Runtime::BindScript(const std::string& assembly, ScriptInstance& script, Core::Transform* transform)
 	{
-		script.Bind(_domain, _assemblies[assembly]);
+		script.Bind(_domain, _assemblies[assembly], transform);
 	}
 }

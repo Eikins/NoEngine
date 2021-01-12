@@ -8,6 +8,7 @@ add_library(Scripting STATIC "src/Runtime.cpp" "include/Scripting/Environment.h"
 
 target_include_directories(Scripting PUBLIC
 	${CMAKE_CURRENT_LIST_DIR}/include 
+	${CMAKE_CURRENT_LIST_DIR}/../Core/include
 	${CMAKE_CURRENT_LIST_DIR}/../Math/include
 	${CMAKE_CURRENT_LIST_DIR}/../ThirdParty/mono-2.0
 )

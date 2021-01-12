@@ -1,6 +1,8 @@
 using NoEngine;
 using System;
 
+using System.Runtime.InteropServices;
+
 namespace Scripts
 {
     public class SinWave : Script
@@ -10,8 +12,15 @@ namespace Scripts
 
         void Update()
         {
-            transform.position.y += magnitude * speed * Time.deltaTime;
-            transform.SetPosition(new Vector3(0, 1, 0));
+            GetComponent<Renderer>();
+            var position = transform.GetPosition();
+            // Console.WriteLine("Allo");
+            Console.WriteLine(position.x + ", " + position.y + ", " + position.z);
+            float t = magnitude * (float)Math.Sin((double)speed * Time.time);
+            transform.SetPosition(new Vector3(
+                t,
+                t,
+                0));
         }
     }
 }

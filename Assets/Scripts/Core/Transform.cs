@@ -1,4 +1,5 @@
 using System.Runtime.CompilerServices;
+using System;
 
 namespace NoEngine
 {
@@ -14,11 +15,24 @@ namespace NoEngine
         }
     }
 
-    public class Transform
+    public struct Transform
     {
-        public Vector3 position;
+        private IntPtr _nativeHandle = 0;
+
+        public void SetPosition(Vector3 position)
+        {
+            SetPosition(_nativeHandle, position);
+        }
+
+        public Vector3 GetPosition()
+        {
+            return GetPosition(_nativeHandle);
+        }
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        extern public void SetPosition(Vector3 position);
+        extern public static void SetPosition(IntPtr handle, Vector3 position);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        extern public static Vector3 GetPosition(IntPtr handle);
     }
 }

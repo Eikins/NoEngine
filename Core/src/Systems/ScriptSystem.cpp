@@ -30,10 +30,25 @@ namespace Core
 
 	void ScriptSystem::CompileAndLoadCore()
 	{
-		_runtime.Compile("CompiledScripts/NoEngine.dll", "Scripts/Core/Transform.cs Scripts/Core/Time.cs Scripts/Core/Script.cs");
+		std::string args = "";
+
+		std::vector<std::string> coreScripts = {
+			"Scripts/Core/Transform.cs",
+			"Scripts/Core/Time.cs",
+			"Scripts/Core/Script.cs",
+			"Scripts/Core/Components/Renderer.cs"
+		};
+
+		for (auto& path : coreScripts)
+		{
+			args.append(path + " ");
+		}
+
+		_runtime.Compile("CompiledScripts/NoEngine.dll", args);
 		_runtime.LoadNoEngineAssembly("CompiledScripts/NoEngine.dll");
 
 		_runtime.RegisterInternalCall("NoEngine.Transform::SetPosition", Scripting::ScriptInstance::Script_SetPosition);
+		_runtime.RegisterInternalCall("NoEngine.Transform::GetPosition", Scripting::ScriptInstance::Script_GetPosition);
 	}
 
 	void ScriptSystem::CompileAndLoadScripts()
@@ -59,7 +74,7 @@ namespace Core
 		for (auto& sb : scripts)
 		{
 			sb._instance.SetName("Scripts", sb.script->GetName());
-			_runtime.BindScript("Scripts", sb._instance);
+			_runtime.BindScript("Scripts", sb._instance, sb.GetTransform());
 		}
 	}
 

@@ -3,6 +3,8 @@
 #include <mono/metadata/assembly.h>
 #include <mono/metadata/attrdefs.h>
 
+#include "Core/Transform.h"
+
 namespace Scripting
 {
 #pragma region Script Instance
@@ -13,14 +15,19 @@ namespace Scripting
 		_name = name;
 	}
 
-	void ScriptInstance::Bind(MonoDomain* domain, MonoAssembly* assembly)
+	void ScriptInstance::Bind(MonoDomain* domain, MonoAssembly* assembly, Core::Transform* transform)
 	{
-		MonoImage* image;
-		image = mono_assembly_get_image(assembly);
+		MonoImage* image =mono_assembly_get_image(assembly);
 
+		// Create C# script & transform
 		auto scriptClass = mono_class_from_name(image, _namespace.c_str(), _name.c_str());
 		_scriptObj = mono_object_new(domain, scriptClass);
-		_transformField = mono_class_get_field_from_name(scriptClass, "transform");
+
+		// Get fields and set script transform field to created transform
+		auto transformField = mono_class_get_field_from_name(scriptClass, "_transform");
+		mono_field_set_value(_scriptObj, transformField, &transform);
+
+		// Get update func
 		auto monoUpdate = mono_class_get_method_from_name(scriptClass, "Update", 0);
 		_updateMethodPtr = mono_method_get_unmanaged_thunk(monoUpdate);
 
@@ -40,20 +47,7 @@ namespace Scripting
 				_publicFields.push_back(info);
 			}
 		}
-
 		mono_runtime_object_init(_scriptObj);
-	}
-
-	void ScriptInstance::SetTransform(Math::Vector3 position)
-	{
-		mono_field_set_value(_scriptObj, _transformField, &position);
-	}
-
-	Math::Vector3 ScriptInstance::GetPosition()
-	{
-		Math::Vector3 position;
-		mono_field_get_value(_scriptObj, _transformField, &position);
-		return position;
 	}
 
 	void ScriptInstance::Update()
@@ -65,10 +59,14 @@ namespace Scripting
 #pragma endregion
 
 #pragma region Internal Calls
-	void ScriptInstance::Script_SetPosition(MonoObject* transform, Math::Vector3 position)
+	void ScriptInstance::Script_SetPosition(Core::Transform* transform, Math::Vector3 position)
 	{
-		
-		std::cout << position << std::endl;
+		transform->SetPosition(position);
+	}
+
+	Math::Vector3 ScriptInstance::Script_GetPosition(Core::Transform* transform)
+	{
+		return transform->GetPosition();
 	}
 #pragma endregion
 
