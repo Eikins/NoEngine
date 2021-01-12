@@ -20,12 +20,12 @@
         void DrawEditors();
 
         void ShowFPS(float fps);
-        void DrawSceneHierarchy(Core::Scene& scene, std::vector<Core::Transform*>& roots, Core::GameObject** selectedObject);
+        void DrawSceneHierarchy(Core::Scene* scene, Core::GameObject** selectedObject);
         void DrawInspector(Core::GameObject* selectedObject);
 
-        void SetupCameraProperties(Core::Camera& camera);
+        void SetupCameraProperties(Core::Camera* camera);
 
-        void DrawGizmos(Core::Scene& scene);
+        void DrawGizmos();
 
         void DrawLine(const Math::Vector3& from, const Math::Vector3& to, const Math::Vector3& color, float thickness = 1.0f);
     }

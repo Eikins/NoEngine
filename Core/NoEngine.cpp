@@ -1,4 +1,4 @@
-﻿// NoEngine.cpp : Defines the entry point for the application.
+// NoEngine.cpp : Defines the entry point for the application.
 //
 
 #include <chrono>
@@ -11,8 +11,11 @@
 #include "Core/Components/AABBCollider.h"
 #include "Core/Components/ScriptedBehaviour.h"
 #include "Core/Components/Rigidbody.h"
+#include "Core/Components/Light.h"
 
 #include "Core/Systems/PhysicsSystem.h"
+#include "Core/Systems/GraphicsSystem.h"
+#include "Core/Systems/ScriptSystem.h"
 
 #include "Core/Assets/Mesh.h"
 #include "Graphics/GraphicsContext.h"
@@ -35,38 +38,17 @@ typedef std::chrono::high_resolution_clock Chrono;
 typedef std::chrono::nanoseconds ns;
 typedef std::chrono::duration<float> fsec;
 
-#pragma region Sin Wave Script
-class SinWaveScript : public Script
-{
-public:
-    SinWaveScript() : Script("SinWave") {}
-private:
-    float _speed = 1.0f;
-
-    virtual void Initialize(GameObject* gameObject, Transform* transform) override {}
-
-    virtual void OnUpdate(GameObject* gameObject, Transform* transform) override
-    {
-        transform->SetPosition(Vector3(0, Sin(Time::time * _speed), 0));
-    }
-
-    virtual void DrawExposedProperties() override
-    {
-        ImGui::InputFloat("Speed", &_speed);
-    }
-
-} sinWaveScript;
-#pragma endregion
-
 class NoEngine
 {
     GameManager _gameManager;
     PhysicsSystem* _physics = nullptr;
     CollisionSystem* _collisionWorld = nullptr;
+    GraphicsSystem* _graphics;
+    ScriptSystem* _scripts;
+
+    InputMaster _inputMaster;
 
     Camera* _mainCamera;
-
-    std::vector<Transform*> _rootTransforms;
 
     void RegisterComponents()
     {
@@ -75,15 +57,20 @@ class NoEngine
         _gameManager.RegisterComponent<AABBCollider>();
         _gameManager.RegisterComponent<ScriptedBehaviour>();
         _gameManager.RegisterComponent<Rigidbody>();
+        _gameManager.RegisterComponent<Light>();
     }
 
     void RegisterSystems()
     {
-        _physics = _gameManager.RegisterSystem<PhysicsSystem>();
-        _gameManager.SetSystemSignature<PhysicsSystem>(_physics->CreateSignature());
-        
         _collisionWorld = _gameManager.RegisterSystem<CollisionSystem>();
+        _physics = _gameManager.RegisterSystem<PhysicsSystem>();
+        _graphics = _gameManager.RegisterSystem<GraphicsSystem>();
+        _scripts = _gameManager.RegisterSystem<ScriptSystem>();
+
         _gameManager.SetSystemSignature<CollisionSystem>(_collisionWorld->CreateSignature());
+        _gameManager.SetSystemSignature<PhysicsSystem>(_physics->CreateSignature());
+        _gameManager.SetSystemSignature<GraphicsSystem>(_graphics->CreateSignature());
+        _gameManager.SetSystemSignature<ScriptSystem>(_scripts->CreateSignature());
 
         _physics->BindCollisionWorld(_collisionWorld);
     }
@@ -114,31 +101,43 @@ public:
         Material barracudaMaterial("Standard", &standardVertexShader, &standardFragmentShader);
         RenderStateBlock renderStateBlock = RenderStateBlock::DefaultOpaque;
         //renderStateBlock.depthTestEnabled = false;
-        Material clownfishMaterial("Clownfish", &standardVertexShader, &clownfishFragmentShader, renderStateBlock);
+        Material clownfishMaterial("Clownfish", &standardVertexShader, &clownfishFragmentShader, renderStateBlock,
+        {
+            {"Color", MaterialPropertyType::COLOR},
+            {"IndirectColor", MaterialPropertyType::COLOR}
+        });
+
+
+        Script sinWaveScript("SinWave", "Scripts/SinWave.cs");
 
         // Create Game Objects
         GameObject* cameraObject = _gameManager.CreateGameObject("Main Camera");
+        GameObject* mainLightObject = _gameManager.CreateGameObject("Main Light");
         GameObject* emptyObject = _gameManager.CreateGameObject("Empty");
-        GameObject* barracudaObject = _gameManager.CreateGameObject("Barracuda");
+        GameObject* barracudaObject = _gameManager.CreateGameObject("Barracuda", emptyObject->GetTransform());
         GameObject* clownfishObject = _gameManager.CreateGameObject("Clownfish");
         GameObject* groundObject = _gameManager.CreateGameObject("Ground");
 
-        _rootTransforms.push_back(cameraObject->GetTransform());
-        _rootTransforms.push_back(emptyObject->GetTransform());
-        _rootTransforms.push_back(clownfishObject->GetTransform());
-        _rootTransforms.push_back(groundObject->GetTransform());
-
-        barracudaObject->GetTransform()->SetParent(emptyObject->GetTransform());
+        scene.rootTransforms.push_back(cameraObject->GetTransform());
+        scene.rootTransforms.push_back(mainLightObject->GetTransform());
+        scene.rootTransforms.push_back(emptyObject->GetTransform());
+        scene.rootTransforms.push_back(clownfishObject->GetTransform());
+        scene.rootTransforms.push_back(groundObject->GetTransform());
 
         // Components
         _mainCamera = &_gameManager.AddComponent<Camera>(cameraObject);
 
+        auto& light = _gameManager.AddComponent<Light>(mainLightObject);
+        light._type = LightType::DIRECTIONAL;
+
         auto& barracudaRenderer = _gameManager.AddComponent<Renderer>(barracudaObject);
         auto& barracudaAABB = _gameManager.AddComponent<AABBCollider>(barracudaObject);
-        _gameManager.AddComponent<Rigidbody>(barracudaObject);
+        auto& barracudaScript = _gameManager.AddComponent<ScriptedBehaviour>(barracudaObject);
+        auto& barracudaRb = _gameManager.AddComponent<Rigidbody>(barracudaObject);
         barracudaRenderer.mesh = &barracudaMeshes[0];
         barracudaRenderer.material = &barracudaMaterial;
         barracudaAABB.bounds = Bounds(Vector3(0, 0.7f, 0), Vector3(10, 2, 1));
+        barracudaScript.script = &sinWaveScript;
 
         auto& clownfishRenderer = _gameManager.AddComponent<Renderer>(clownfishObject);
         auto& clownfishAABB = _gameManager.AddComponent<AABBCollider>(clownfishObject);
@@ -157,6 +156,12 @@ public:
         clownfishObject->GetTransform()->SetScale(Vector3::One * 0.15f);
         groundObject->GetTransform()->SetPosition(Vector3(0, -10, 0));
 
+        _gameManager.SetScene(&scene);
+
+        _scripts->InitRuntime();
+        _scripts->CompileAndLoadCore();
+        _scripts->CompileAndLoadScripts();
+
         try
         {
             WindowDescriptor windowDescriptor = {};
@@ -169,68 +174,47 @@ public:
 #ifdef NoEngine_Editor
             Editor::CreateContext(_gameManager);
             Editor::SetEditorScale(2);
-            GameObject* selectedObject = nullptr;
 #endif
-            auto graphics = CreateGraphicsContext(windowDescriptor);
-            Window& window = graphics.GetWindow();
+
+            _graphics->CreateContext(windowDescriptor);
+            _graphics->BindInputMaster(&_inputMaster);
+
+            Window& window = _graphics->GetWindow();
 
             Time::deltaTime = 1.0f / 60.0f;
             std::chrono::steady_clock::time_point lastFrameTimePoint = Chrono::now();
 
-            //std::vector<Renderer*> renderers;
-            //scene.GetRenderers(RenderingLayer::Opaque, renderers);
-
-            std::vector<Renderer>& renderers = _gameManager.GetAllComponents<Renderer>();
-            graphics.PrepareRenderers(renderers);
-
             while (window.ShouldClose() == false)
             {
                 window.PollEvents();
-                graphics.SetupCameraProperties(*_mainCamera);
-                if (graphics.BeginFrame())
+                if (_graphics->RenderAsync(_mainCamera))
                 {
-                    graphics.DrawRenderers(renderers);
-#ifdef NoEngine_Editor
-                    if (Editor::Enabled())
-                    {
-                        graphics.BeginEditorFrame();
-                        Editor::ShowFPS(1.0f / Time::deltaTime);
-                        // Draw gizmos
-                        Editor::SetupCameraProperties(*_mainCamera);
-                        Editor::DrawGizmos(scene);
-
-                        Editor::DrawSceneHierarchy(scene, _rootTransforms, &selectedObject);
-                        Editor::DrawInspector(selectedObject);
-
-                        graphics.EndEditorFrame();
-                    }
-#endif
-                    graphics.EndFrame();
-                    graphics.RenderAsync();
-
                     _physics->Integrate(Time::deltaTime);
-
-                    graphics.WaitForRenderCompletion();
-
-                    // Update dt
-                    auto timePoint = Chrono::now();
-                    fsec fs = timePoint - lastFrameTimePoint;
-                    Time::deltaTime = fs.count();
-                    Time::time += Time::deltaTime;
-                    lastFrameTimePoint = timePoint;
-
-                    // 60 FPS lock
-                    if (Time::deltaTime < 1.0f / 60.0f)
-                    {
-                        long sleepDuration = ((1.0f / 60.0f) - Time::deltaTime) * 1000000000;
-                        std::this_thread::sleep_for(std::chrono::nanoseconds(sleepDuration));
-                        Time::deltaTime = 1.0f / 60.0f;
-                    }
+                    _scripts->Update();
+                    _graphics->WaitForRenderCompletion();
                 }
+
+                // Update dt
+                auto timePoint = Chrono::now();
+                fsec fs = timePoint - lastFrameTimePoint;
+                Time::deltaTime = fs.count();
+
+                // 60 FPS lock
+                if (Time::deltaTime < 1.0f / 60.0f)
+                {
+                    long sleepDuration = ((1.0f / 60.0f) - Time::deltaTime) * 1000000000;
+                    std::this_thread::sleep_for(std::chrono::nanoseconds(sleepDuration));
+                    Time::deltaTime = 1.0f / 60.0f;
+                }
+
+                Time::time += Time::deltaTime * Time::timeScale;
+                lastFrameTimePoint = timePoint;
+                
             }
 
-            graphics.Release();
+            _graphics->Dispose();
             Editor::DestroyContext();
+            _scripts->ShutdownRuntime();
         }
         catch (const std::exception& e)
         {
@@ -242,9 +226,6 @@ public:
     }
 
 };
-
-
-
 
 int main()
 {

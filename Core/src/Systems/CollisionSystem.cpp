@@ -19,9 +19,10 @@ namespace Core
 		for (auto gameObject : _gameObjects)
 		{
 			// Do not check collision with itself
-			if (gameObject == sourceGameObject) continue;
+			if (gameObject == sourceGameObject || gameObject->IsActive() == false) continue;
 
 			auto aabb2 = _gameManager->GetComponent<AABBCollider>(gameObject);
+			if (aabb2->IsEnabled() == false) continue;
 			if (worldBounds.Overlaps(aabb2->GetWorldBounds()))
 			{
 				result.push_back({ aabb2, Math::Vector3::Zero, Math::Vector3::Zero });

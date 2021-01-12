@@ -29,7 +29,7 @@ namespace Core
 		std::unordered_map<size_t, GameObject*> _indexToGameObject;
 
 	public:
-		ComponentContainer(size_t initialCapacity = 512)
+		ComponentContainer(size_t initialCapacity = 65536)
 		{
 			_elements.reserve(initialCapacity);
 			_gameObjectToIndex.reserve(initialCapacity);

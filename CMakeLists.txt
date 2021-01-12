@@ -3,6 +3,20 @@
 #
 cmake_minimum_required (VERSION 3.9)
 
+# =================== Set user specific variables here ======================
+# TODO : try to find a better approach (using env variables)
+
+# vcpkg tooclchain
+set(CMAKE_TOOLCHAIN_FILE "D:/Dev/Tools/vcpkg/scripts/buildsystems/vcpkg.cmake")
+
+# MoONO
+# Library path
+set(MONO_LIBRARY_PATH "D:/Dev/SDKs/Mono/msvc/build/sgen/x64/lib/Release")
+set(MONO_BINARY_PATH "D:/Dev/SDKs/Mono/msvc/build/sgen/x64/bin/Release")
+# Runtime location
+set(MONO_INSTALL_FOLDER "C:/Program\ Files\ (x86)/Mono")
+#============================================================================
+
 project ("NoEngine")
 
 # Add our Cmake modules
@@ -20,7 +34,10 @@ set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR}/lib)
 
 # Add the Editor support
-add_definitions( -DNoEngine_Editor )
+add_compile_definitions(MONO_LIB_DIR="${MONO_INSTALL_FOLDER}/lib")
+add_compile_definitions(MONO_ETC_DIR="${MONO_INSTALL_FOLDER}/etc")
+add_compile_definitions(MONO_BIN_DIR="${MONO_INSTALL_FOLDER}/bin")
+add_compile_definitions(NoEngine_Editor)
 
 # Add the modules
 add_subdirectory ("Math")

@@ -1,6 +1,8 @@
 #pragma once
 
 #ifdef NoEngine_Editor
+	#include <cctype>
+
 	#include "imgui.h"
 
 	#include "Core/Components/Camera.h"
@@ -8,6 +10,7 @@
 	#include "Core/Components/ScriptedBehaviour.h"
 	#include "Core/Components/AABBCollider.h"
 	#include "Core/Components/Rigidbody.h"
+	#include "Core/Components/Light.h"
 	#include "Core/Assets/Asset.h"
 
 	#include "Core/Modules/GameManager.hpp"
@@ -16,7 +19,7 @@
 	{
 		class ComponentEditors
 		{
-		private:
+		public:
 			static void InputAsset(const char* label, const Core::Asset* asset)
 			{
 				if (asset == nullptr)
@@ -25,29 +28,46 @@
 				}
 				else
 				{
-					ImGui::InputText(label, &asset->GetName()[0], 16, ImGuiInputTextFlags_ReadOnly);
+					ImGui::InputText(label, &asset->GetName()[0], 64, ImGuiInputTextFlags_ReadOnly);
 				}
 			}
 		public:
-			static void DrawComponents(Core::GameObject& gameObject)
+			static void DrawComponents(Core::GameObject* gameObject)
 			{
 				// Camera
 				{
-					auto camera = __GameManager->GetComponent<Core::Camera>(&gameObject);
+					auto camera = __GameManager->GetComponent<Core::Camera>(gameObject);
 					if (camera != nullptr)
 					{
 						ImGui::PushID(0);
+						ImGui::Checkbox("", &static_cast<Core::Component*>(camera)->_enabled);
+						ImGui::SameLine();
 						DrawCamera(camera);
+						ImGui::PopID();
+					}
+				}
+
+				// Light
+				{
+					auto light = __GameManager->GetComponent<Core::Light>(gameObject);
+					if (light != nullptr)
+					{
+						ImGui::PushID(100);
+						ImGui::Checkbox("", &static_cast<Core::Component*>(light)->_enabled);
+						ImGui::SameLine();
+						DrawLight(light);
 						ImGui::PopID();
 					}
 				}
 
 				// Renderer
 				{
-					auto renderer = __GameManager->GetComponent<Core::Renderer>(&gameObject);
+					auto renderer = __GameManager->GetComponent<Core::Renderer>(gameObject);
 					if (renderer != nullptr)
 					{
 						ImGui::PushID(1);
+						ImGui::Checkbox("", &static_cast<Core::Component*>(renderer)->_enabled);
+						ImGui::SameLine();
 						DrawRenderer(renderer);
 						ImGui::PopID();
 					}
@@ -55,10 +75,12 @@
 
 				// AABB Collider
 				{
-					auto aabb = __GameManager->GetComponent<Core::AABBCollider>(&gameObject);
+					auto aabb = __GameManager->GetComponent<Core::AABBCollider>(gameObject);
 					if (aabb != nullptr)
 					{
 						ImGui::PushID(2);
+						ImGui::Checkbox("", &static_cast<Core::Component*>(aabb)->_enabled);
+						ImGui::SameLine();
 						DrawAABB(aabb);
 						ImGui::PopID();
 					}
@@ -66,10 +88,12 @@
 
 				// Rigidbody
 				{
-					auto rb = __GameManager->GetComponent<Core::Rigidbody>(&gameObject);
+					auto rb = __GameManager->GetComponent<Core::Rigidbody>(gameObject);
 					if (rb != nullptr)
 					{
 						ImGui::PushID(3);
+						ImGui::Checkbox("", &static_cast<Core::Component*>(rb)->_enabled);
+						ImGui::SameLine();
 						DrawRigidbody(rb);
 						ImGui::PopID();
 					}
@@ -77,10 +101,12 @@
 
 				// ScriptedBehaviour
 				{
-					auto sb = __GameManager->GetComponent<Core::ScriptedBehaviour>(&gameObject);
+					auto sb = __GameManager->GetComponent<Core::ScriptedBehaviour>(gameObject);
 					if (sb != nullptr)
 					{
 						ImGui::PushID(4);
+						ImGui::Checkbox("", &static_cast<Core::Component*>(sb)->_enabled);
+						ImGui::SameLine();
 						DrawScriptedBehaviour(sb);
 						ImGui::PopID();
 					}
@@ -93,7 +119,7 @@
 				if (ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen))
 				{
 					auto position = transform._position;
-					auto eulerAngles = transform._rotation.GetEulerAngles();
+					auto eulerAngles = transform.GetEulerAngles();
 					auto scale = transform._scale;
 
 					if (ImGui::DragFloat3("Position", reinterpret_cast<float*>(&position), 0.1f))
@@ -103,7 +129,7 @@
 
 					if (ImGui::DragFloat3("Rotation", reinterpret_cast<float*>(&eulerAngles), 0.1f))
 					{
-						transform.SetRotation(Math::Quaternion::Euler(eulerAngles));
+						transform.SetEulerAngles(eulerAngles);
 					}
 
 					if (ImGui::DragFloat3("Scale", reinterpret_cast<float*>(&scale), 0.1f))
@@ -146,6 +172,27 @@
 				}
 			}
 
+			static void DrawLight(Core::Light* light)
+			{
+				if (ImGui::CollapsingHeader("Light", ImGuiTreeNodeFlags_DefaultOpen))
+				{
+					const std::array<char*, 1> items = { "Directional" };
+					int type = static_cast<int>(light->_type);
+					Math::Vector3 color = light->_color;
+					
+					if (ImGui::Combo("Type", &type, items.data(), items.size()))
+					{
+						light->_type = static_cast<Core::LightType>(type);
+					}
+
+					if (ImGui::ColorEdit3("Color", reinterpret_cast<float*>(&color)))
+					{
+						light->_color = color;
+					}
+
+				}
+			}
+
 			static void DrawRenderer(Core::Renderer* renderer)
 			{
 				if (ImGui::CollapsingHeader("Renderer", ImGuiTreeNodeFlags_DefaultOpen))
@@ -169,7 +216,24 @@
 					if (ImGui::CollapsingHeader((behaviour->script->GetName() + " (Script)").c_str(), ImGuiTreeNodeFlags_DefaultOpen))
 					{
 						InputAsset("Script", behaviour->script);
-						behaviour->script->DrawExposedProperties();
+						auto& fields = behaviour->GetInstance().GetPublicFields();
+						for (auto& field : fields)
+						{
+							std::string name = field.name;
+							name[0] = toupper(name[0]);
+							switch (field.type)
+							{
+							case Scripting::FieldType::FLOAT:
+								{
+									float value = behaviour->GetInstance().GetFieldValue<float>(field.handle);
+									if (ImGui::DragFloat(name.c_str(), &value))
+									{
+										behaviour->GetInstance().SetFieldValue<float>(field.handle, value);
+									}
+								}
+								break;
+							}
+						}
 					}
 				}
 			}
@@ -191,11 +255,14 @@
 				}
 			}
 
-			static void DrawRigidbody(Core::Rigidbody* aabb)
+			static void DrawRigidbody(Core::Rigidbody* rb)
 			{
 				if (ImGui::CollapsingHeader("Rigidbody", ImGuiTreeNodeFlags_DefaultOpen))
 				{
-
+					if (ImGui::Button("Jump !"))
+					{
+						rb->velocity = Math::Vector3::Up * 5;
+					}
 				}
 			}
 		};

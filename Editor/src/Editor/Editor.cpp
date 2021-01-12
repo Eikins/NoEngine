@@ -4,6 +4,7 @@
     #include "Editor/SceneEditors.h"
 
     #include "Core/Components/Camera.h"
+    #include "Core/Systems/ScriptSystem.h"
 
     #include "imgui.h"
 
@@ -16,6 +17,9 @@
         Math::Matrix4x4 __gizmoMatrix;
 
         bool __drawGizmosBounds = false;
+        bool __drawLightDir = false;
+
+        Core::GameObject* __selectedObject = nullptr;
 
         void SetEditorScale(float scale)
         {
@@ -44,58 +48,70 @@
             //ImGui::StyleColorsClassic();
         
             // From community imgui styles
-            ImGuiStyle& style = ImGui::GetStyle();
-            style.Colors[ImGuiCol_Text] = ImVec4(1.00f, 1.00f, 1.00f, 1.00f);
-            style.Colors[ImGuiCol_TextDisabled] = ImVec4(0.50f, 0.50f, 0.50f, 1.00f);
-            style.Colors[ImGuiCol_WindowBg] = ImVec4(0.13f, 0.14f, 0.15f, 1.00f);
-            style.Colors[ImGuiCol_ChildBg] = ImVec4(0.13f, 0.14f, 0.15f, 1.00f);
-            style.Colors[ImGuiCol_PopupBg] = ImVec4(0.13f, 0.14f, 0.15f, 1.00f);
-            style.Colors[ImGuiCol_Border] = ImVec4(0.43f, 0.43f, 0.50f, 0.50f);
-            style.Colors[ImGuiCol_BorderShadow] = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
-            style.Colors[ImGuiCol_FrameBg] = ImVec4(0.25f, 0.25f, 0.25f, 1.00f);
-            style.Colors[ImGuiCol_FrameBgHovered] = ImVec4(0.38f, 0.38f, 0.38f, 1.00f);
-            style.Colors[ImGuiCol_FrameBgActive] = ImVec4(0.67f, 0.67f, 0.67f, 0.39f);
-            style.Colors[ImGuiCol_TitleBg] = ImVec4(0.08f, 0.08f, 0.09f, 1.00f);
-            style.Colors[ImGuiCol_TitleBgActive] = ImVec4(0.08f, 0.08f, 0.09f, 1.00f);
-            style.Colors[ImGuiCol_TitleBgCollapsed] = ImVec4(0.00f, 0.00f, 0.00f, 0.51f);
-            style.Colors[ImGuiCol_MenuBarBg] = ImVec4(0.14f, 0.14f, 0.14f, 1.00f);
-            style.Colors[ImGuiCol_ScrollbarBg] = ImVec4(0.02f, 0.02f, 0.02f, 0.53f);
-            style.Colors[ImGuiCol_ScrollbarGrab] = ImVec4(0.31f, 0.31f, 0.31f, 1.00f);
-            style.Colors[ImGuiCol_ScrollbarGrabHovered] = ImVec4(0.41f, 0.41f, 0.41f, 1.00f);
-            style.Colors[ImGuiCol_ScrollbarGrabActive] = ImVec4(0.51f, 0.51f, 0.51f, 1.00f);
-            style.Colors[ImGuiCol_CheckMark] = ImVec4(0.11f, 0.64f, 0.92f, 1.00f);
-            style.Colors[ImGuiCol_SliderGrab] = ImVec4(0.11f, 0.64f, 0.92f, 1.00f);
-            style.Colors[ImGuiCol_SliderGrabActive] = ImVec4(0.08f, 0.50f, 0.72f, 1.00f);
-            style.Colors[ImGuiCol_Button] = ImVec4(0.25f, 0.25f, 0.25f, 1.00f);
-            style.Colors[ImGuiCol_ButtonHovered] = ImVec4(0.38f, 0.38f, 0.38f, 1.00f);
-            style.Colors[ImGuiCol_ButtonActive] = ImVec4(0.67f, 0.67f, 0.67f, 0.39f);
-            style.Colors[ImGuiCol_Header] = ImVec4(0.22f, 0.22f, 0.22f, 1.00f);
-            style.Colors[ImGuiCol_HeaderHovered] = ImVec4(0.25f, 0.25f, 0.25f, 1.00f);
-            style.Colors[ImGuiCol_HeaderActive] = ImVec4(0.67f, 0.67f, 0.67f, 0.39f);
-            style.Colors[ImGuiCol_Separator] = style.Colors[ImGuiCol_Border];
-            style.Colors[ImGuiCol_SeparatorHovered] = ImVec4(0.41f, 0.42f, 0.44f, 1.00f);
-            style.Colors[ImGuiCol_SeparatorActive] = ImVec4(0.26f, 0.59f, 0.98f, 0.95f);
-            style.Colors[ImGuiCol_ResizeGrip] = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
-            style.Colors[ImGuiCol_ResizeGripHovered] = ImVec4(0.29f, 0.30f, 0.31f, 0.67f);
-            style.Colors[ImGuiCol_ResizeGripActive] = ImVec4(0.26f, 0.59f, 0.98f, 0.95f);
-            style.Colors[ImGuiCol_Tab] = ImVec4(0.08f, 0.08f, 0.09f, 0.83f);
-            style.Colors[ImGuiCol_TabHovered] = ImVec4(0.33f, 0.34f, 0.36f, 0.83f);
-            style.Colors[ImGuiCol_TabActive] = ImVec4(0.23f, 0.23f, 0.24f, 1.00f);
-            style.Colors[ImGuiCol_TabUnfocused] = ImVec4(0.08f, 0.08f, 0.09f, 1.00f);
-            style.Colors[ImGuiCol_TabUnfocusedActive] = ImVec4(0.13f, 0.14f, 0.15f, 1.00f);
-            //style.Colors[ImGuiCol_DockingPreview] = ImVec4(0.26f, 0.59f, 0.98f, 0.70f);
-            //style.Colors[ImGuiCol_DockingEmptyBg] = ImVec4(0.20f, 0.20f, 0.20f, 1.00f);
-            style.Colors[ImGuiCol_PlotLines] = ImVec4(0.61f, 0.61f, 0.61f, 1.00f);
-            style.Colors[ImGuiCol_PlotLinesHovered] = ImVec4(1.00f, 0.43f, 0.35f, 1.00f);
-            style.Colors[ImGuiCol_PlotHistogram] = ImVec4(0.90f, 0.70f, 0.00f, 1.00f);
-            style.Colors[ImGuiCol_PlotHistogramHovered] = ImVec4(1.00f, 0.60f, 0.00f, 1.00f);
-            style.Colors[ImGuiCol_TextSelectedBg] = ImVec4(0.26f, 0.59f, 0.98f, 0.35f);
-            style.Colors[ImGuiCol_DragDropTarget] = ImVec4(0.11f, 0.64f, 0.92f, 1.00f);
-            style.Colors[ImGuiCol_NavHighlight] = ImVec4(0.26f, 0.59f, 0.98f, 1.00f);
-            style.Colors[ImGuiCol_NavWindowingHighlight] = ImVec4(1.00f, 1.00f, 1.00f, 0.70f);
-            style.Colors[ImGuiCol_NavWindowingDimBg] = ImVec4(0.80f, 0.80f, 0.80f, 0.20f);
-            style.Colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.80f, 0.80f, 0.80f, 0.35f);
-            style.GrabRounding = style.FrameRounding = 2.3f;
+            ImGuiStyle* style = &ImGui::GetStyle();
+            ImVec4* colors = style->Colors;
+
+            colors[ImGuiCol_Text] = ImVec4(1.000f, 1.000f, 1.000f, 1.000f);
+            colors[ImGuiCol_TextDisabled] = ImVec4(0.500f, 0.500f, 0.500f, 1.000f);
+            colors[ImGuiCol_WindowBg] = ImVec4(0.180f, 0.180f, 0.180f, 1.000f);
+            colors[ImGuiCol_ChildBg] = ImVec4(0.280f, 0.280f, 0.280f, 0.000f);
+            colors[ImGuiCol_PopupBg] = ImVec4(0.313f, 0.313f, 0.313f, 1.000f);
+            colors[ImGuiCol_Border] = ImVec4(0.266f, 0.266f, 0.266f, 1.000f);
+            colors[ImGuiCol_BorderShadow] = ImVec4(0.000f, 0.000f, 0.000f, 0.000f);
+            colors[ImGuiCol_FrameBg] = ImVec4(0.160f, 0.160f, 0.160f, 1.000f);
+            colors[ImGuiCol_FrameBgHovered] = ImVec4(0.200f, 0.200f, 0.200f, 1.000f);
+            colors[ImGuiCol_FrameBgActive] = ImVec4(0.280f, 0.280f, 0.280f, 1.000f);
+            colors[ImGuiCol_TitleBg] = ImVec4(0.148f, 0.148f, 0.148f, 1.000f);
+            colors[ImGuiCol_TitleBgActive] = ImVec4(0.148f, 0.148f, 0.148f, 1.000f);
+            colors[ImGuiCol_TitleBgCollapsed] = ImVec4(0.148f, 0.148f, 0.148f, 1.000f);
+            colors[ImGuiCol_MenuBarBg] = ImVec4(0.195f, 0.195f, 0.195f, 1.000f);
+            colors[ImGuiCol_ScrollbarBg] = ImVec4(0.160f, 0.160f, 0.160f, 1.000f);
+            colors[ImGuiCol_ScrollbarGrab] = ImVec4(0.277f, 0.277f, 0.277f, 1.000f);
+            colors[ImGuiCol_ScrollbarGrabHovered] = ImVec4(0.300f, 0.300f, 0.300f, 1.000f);
+            colors[ImGuiCol_ScrollbarGrabActive] = ImVec4(1.000f, 0.391f, 0.000f, 1.000f);
+            colors[ImGuiCol_CheckMark] = ImVec4(1.000f, 1.000f, 1.000f, 1.000f);
+            colors[ImGuiCol_SliderGrab] = ImVec4(0.391f, 0.391f, 0.391f, 1.000f);
+            colors[ImGuiCol_SliderGrabActive] = ImVec4(1.000f, 0.391f, 0.000f, 1.000f);
+            colors[ImGuiCol_Button] = ImVec4(1.000f, 1.000f, 1.000f, 0.000f);
+            colors[ImGuiCol_ButtonHovered] = ImVec4(1.000f, 1.000f, 1.000f, 0.156f);
+            colors[ImGuiCol_ButtonActive] = ImVec4(1.000f, 1.000f, 1.000f, 0.391f);
+            colors[ImGuiCol_Header] = ImVec4(0.313f, 0.313f, 0.313f, 1.000f);
+            colors[ImGuiCol_HeaderHovered] = ImVec4(0.469f, 0.469f, 0.469f, 1.000f);
+            colors[ImGuiCol_HeaderActive] = ImVec4(0.469f, 0.469f, 0.469f, 1.000f);
+            colors[ImGuiCol_Separator] = colors[ImGuiCol_Border];
+            colors[ImGuiCol_SeparatorHovered] = ImVec4(0.391f, 0.391f, 0.391f, 1.000f);
+            colors[ImGuiCol_SeparatorActive] = ImVec4(1.000f, 0.391f, 0.000f, 1.000f);
+            colors[ImGuiCol_ResizeGrip] = ImVec4(1.000f, 1.000f, 1.000f, 0.250f);
+            colors[ImGuiCol_ResizeGripHovered] = ImVec4(1.000f, 1.000f, 1.000f, 0.670f);
+            colors[ImGuiCol_ResizeGripActive] = ImVec4(1.000f, 0.391f, 0.000f, 1.000f);
+            colors[ImGuiCol_Tab] = ImVec4(0.098f, 0.098f, 0.098f, 1.000f);
+            colors[ImGuiCol_TabHovered] = ImVec4(0.352f, 0.352f, 0.352f, 1.000f);
+            colors[ImGuiCol_TabActive] = ImVec4(0.195f, 0.195f, 0.195f, 1.000f);
+            colors[ImGuiCol_TabUnfocused] = ImVec4(0.098f, 0.098f, 0.098f, 1.000f);
+            colors[ImGuiCol_TabUnfocusedActive] = ImVec4(0.195f, 0.195f, 0.195f, 1.000f);
+            //colors[ImGuiCol_DockingPreview] = ImVec4(1.000f, 0.391f, 0.000f, 0.781f);
+            //colors[ImGuiCol_DockingEmptyBg] = ImVec4(0.180f, 0.180f, 0.180f, 1.000f);
+            colors[ImGuiCol_PlotLines] = ImVec4(0.469f, 0.469f, 0.469f, 1.000f);
+            colors[ImGuiCol_PlotLinesHovered] = ImVec4(1.000f, 0.391f, 0.000f, 1.000f);
+            colors[ImGuiCol_PlotHistogram] = ImVec4(0.586f, 0.586f, 0.586f, 1.000f);
+            colors[ImGuiCol_PlotHistogramHovered] = ImVec4(1.000f, 0.391f, 0.000f, 1.000f);
+            colors[ImGuiCol_TextSelectedBg] = ImVec4(1.000f, 1.000f, 1.000f, 0.156f);
+            colors[ImGuiCol_DragDropTarget] = ImVec4(1.000f, 0.391f, 0.000f, 1.000f);
+            colors[ImGuiCol_NavHighlight] = ImVec4(1.000f, 0.391f, 0.000f, 1.000f);
+            colors[ImGuiCol_NavWindowingHighlight] = ImVec4(1.000f, 0.391f, 0.000f, 1.000f);
+            colors[ImGuiCol_NavWindowingDimBg] = ImVec4(0.000f, 0.000f, 0.000f, 0.586f);
+            colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.000f, 0.000f, 0.000f, 0.586f);
+
+            style->ChildRounding = 4.0f;
+            style->FrameBorderSize = 1.0f;
+            style->FrameRounding = 2.0f;
+            style->GrabMinSize = 7.0f;
+            style->PopupRounding = 2.0f;
+            style->ScrollbarRounding = 12.0f;
+            style->ScrollbarSize = 13.0f;
+            style->TabBorderSize = 1.0f;
+            style->TabRounding = 0.0f;
+            style->WindowRounding = 4.0f;
 
             __editorEnabled = true;
         }
@@ -113,6 +129,8 @@
 
         void DrawEditors()
         {
+            Editor::DrawSceneHierarchy(__GameManager->GetScene(), &__selectedObject);
+            Editor::DrawInspector(__selectedObject);
         }
 
         void ShowFPS(float fps)
@@ -137,7 +155,7 @@
             ImGui::End();
         }
 
-        void DrawSceneHierarchy(Core::Scene& scene, std::vector<Core::Transform*>& roots, Core::GameObject** selectedObject)
+        void DrawSceneHierarchy(Core::Scene* scene, Core::GameObject** selectedObject)
         {
             auto io = ImGui::GetIO();
             ImGui::SetNextWindowSize(ImVec2(400, io.DisplaySize.y), ImGuiCond_Once);
@@ -145,7 +163,7 @@
 
             ImGui::Begin("Hierarchy");
             ImGui::SetWindowFontScale(__editorScale);
-                SceneEditors::DrawSceneHierarchy(roots, selectedObject);
+                SceneEditors::DrawSceneHierarchy(scene->rootTransforms, selectedObject);
             ImGui::End();
         }
 
@@ -160,21 +178,21 @@
             ImGui::SetWindowFontScale(__editorScale);
             if (selectedObject != nullptr)
             {
-                GameObjectEditor::Draw(*selectedObject);
+                GameObjectEditor::Draw(selectedObject);
             }
             ImGui::End();
         }
 
-        void SetupCameraProperties(Core::Camera& camera)
+        void SetupCameraProperties(Core::Camera* camera)
         {
-            __gizmoProjViewMatrix = camera.GetProjectionMatrix() * camera.GetTransform()->GetLocalToWorldMatrix().InverseTR();
+            __gizmoProjViewMatrix = camera->GetProjectionMatrix() * camera->GetTransform()->GetLocalToWorldMatrix().InverseTR();
             __gizmoMatrix = Math::Matrix4x4::Identity;
         }
 
         inline Math::Vector2 TransformToScreenPos(const ImGuiIO& io, const Math::Vector3& position)
         {
             auto csPos = __gizmoProjViewMatrix * __gizmoMatrix * Math::Vector4(position, 1.0f);
-            csPos = csPos / csPos.w;
+            csPos = csPos / Math::Abs(csPos.w);
             return (Math::Vector2(csPos.x, csPos.y) + Math::Vector2::One) / 2 * Math::Vector2(io.DisplaySize.x, io.DisplaySize.y);
         }
 
@@ -189,16 +207,38 @@
             drawList->AddLine(ImVec2(ssFrom.x, ssFrom.y), ImVec2(ssTo.x, ssTo.y), ImColor(color.x * 255, color.y * 255, color.z * 255), thickness);
         }
 
-        void DrawGizmos(Core::Scene& scene)
+        void DrawGizmos()
         {
             auto io = ImGui::GetIO();
             int posX = io.DisplaySize.x - 600;
             ImGui::SetNextWindowPos(ImVec2(posX, 0), ImGuiCond_Once);
 
-            ImGui::Begin("Gizmos");
+            ImGui::Begin("Editor Settings");
             ImGui::SetWindowFontScale(__editorScale);
 
-            ImGui::Checkbox("Draw Bounds", &__drawGizmosBounds);
+            ImGui::Checkbox("Show Bounds", &__drawGizmosBounds);
+            ImGui::Checkbox("Show Light Direction", &__drawLightDir);
+
+            //if (ImGui::Button("Reload Scripts"))
+            //{
+            //    auto scriptSystem = __GameManager->GetSystem<Core::ScriptSystem>();
+            //    scriptSystem->Reload();
+            //    scriptSystem->CompileAndLoadCore();
+            //    scriptSystem->CompileAndLoadScripts();
+            //}
+
+            if (__drawLightDir)
+            {
+                auto lights = __GameManager->GetAllComponents<Core::Light>();
+                if (lights.size() > 0)
+                {
+                    auto directionalLight = lights[0];
+                    auto worldPos = directionalLight.GetTransform()->GetWorldPosition();
+                    auto dirPos = worldPos + directionalLight.GetTransform()->ForwardVector();
+                    DrawLine(worldPos, dirPos, directionalLight._color);
+                }
+            }
+
             if (__drawGizmosBounds)
             {
                 auto aabbs = __GameManager->GetAllComponents<Core::AABBCollider>();

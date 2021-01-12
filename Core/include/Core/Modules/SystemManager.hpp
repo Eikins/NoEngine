@@ -30,6 +30,14 @@ namespace Core
 		}
 
 		template<typename T>
+		T* GetSystem()
+		{
+			const char* typeName = typeid(T).name();
+			assert(_systems.find(typeName) == _systems.end() && "System not registered.");
+			return static_cast<T*>(_systems[typeName]);
+		}
+
+		template<typename T>
 		void SetSignature(Signature signature)
 		{
 			const char* typeName = typeid(T).name();

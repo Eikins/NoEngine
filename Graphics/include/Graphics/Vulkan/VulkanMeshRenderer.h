@@ -22,9 +22,12 @@ namespace Graphics
         struct BakedMaterial
         {
             Core::Material* material;
-            VkDescriptorSetLayout descriptorSetLayout;
-            VkPipelineLayout pipelineLayout;
-            VkPipeline pipeline;
+            VkDescriptorSetLayout perObjectSetLayout = VK_NULL_HANDLE;
+            VkDescriptorSetLayout perMaterialSetLayout = VK_NULL_HANDLE;
+            VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
+            VkPipeline pipeline = VK_NULL_HANDLE;
+            VkDescriptorSet descriptorSet = VK_NULL_HANDLE;
+            VulkanBuffer perMaterialBuffer;
         };
 
         struct BakedMesh
@@ -46,9 +49,11 @@ namespace Graphics
 
         struct ConstantBuffer
         {
-            Math::Matrix4x4 viewMatrix;
-            Math::Matrix4x4 projectionMatrix;
-            Math::Vector3 worldCameraPosition;
+            alignas(64) Math::Matrix4x4 viewMatrix;
+            alignas(64) Math::Matrix4x4 projectionMatrix;
+            alignas(16) Math::Vector3 cameraWorldPosition;
+            alignas(16) Math::Vector3 directionalLightDirection;
+            alignas(16) Math::Vector3 directionalLightColor;
         } _constantBuffer;
 
         VulkanContext* _context = nullptr;
@@ -67,10 +72,13 @@ namespace Graphics
         BakedMaterial* BakeMaterial(Core::Material* material);
         BakedMesh* BakeMesh(Core::Mesh* mesh);
         BakedRenderer* BakeRenderer(Core::Renderer* renderer);
-	public:
-        void Init(VulkanContext* ctx, VkRenderPass renderPass, uint32_t materialCapacity = 8, uint32_t meshCapacity = 64, uint32_t rendererCapacity = 512);
 
-        void SetupCameraProperties(Core::Camera& camera);
+        void CheckMeshAndMaterial(BakedRenderer& renderer);
+	public:
+        void Init(VulkanContext* ctx, VkRenderPass renderPass, uint32_t materialCapacity = 8, uint32_t meshCapacity = 64, uint32_t rendererCapacity = 65536);
+
+        void SetupCameraProperties(Core::Camera* camera);
+        void SetDirectionalLight(const Math::Vector3& direction, const Math::Vector3& color);
 
         void PrepareRenderers(std::vector<Core::Renderer>& renderers);
         void UpdateBuffers(std::vector<Core::Renderer>& renderers);

@@ -10,11 +10,7 @@
       "cmakeCommandArgs": "",
       "buildCommandArgs": "-v install",
       "variables": [
-        {
-          "name": "CMAKE_TOOLCHAIN_FILE",
-          "value": "D:\\Dev\\Tools\\vcpkg\\scripts\\buildsystems\\vcpkg.cmake",
-          "type": "STRING"
-        }
+
       ],
       "ctestCommandArgs": ""
     }

@@ -14,10 +14,15 @@ namespace Core
 		std::unique_ptr<ComponentManager> _componentManager;
 		std::unique_ptr<GameObjectManager> _gameObjectManager;
 		std::unique_ptr<SystemManager> _systemManager;
+
+		Scene* _scene;
 	public:
 		void Init();
-		GameObject* CreateGameObject(std::string name, Transform* parent = nullptr);
+		GameObject* CreateGameObject(const std::string& name, Transform* parent = nullptr);
 		void DestroyGameObject(GameObject* gameObject);
+
+		void SetScene(Scene* scene);
+		Scene* GetScene();
 
 		template<typename T>
 		void RegisterComponent()
@@ -31,6 +36,13 @@ namespace Core
 			auto ptr = _systemManager->RegisterSystem<T>();
 			ptr->_gameManager = this;
 			return ptr;
+		}
+
+
+		template<typename T>
+		T* GetSystem()
+		{
+			return _systemManager->GetSystem<T>();
 		}
 
 		template<typename T>

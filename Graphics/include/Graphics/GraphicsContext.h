@@ -5,6 +5,7 @@
 #include "Window.h"
 #include "Core/Components/Camera.h"
 #include "Core/Components/Renderer.h"
+#include "Core/Input/InputMaster.h"
 
 namespace Graphics
 {
@@ -15,15 +16,18 @@ namespace Graphics
 
     class GraphicsContext {
     private:
-        GraphicsContext();
         GraphicsContextImpl* _impl = nullptr;
         Window* _window = nullptr;
     public:
+        GraphicsContext();
         Window& GetWindow();
+
+        void BindInputMaster(Core::InputMaster* inputMaster);
 
         void PrepareRenderers(std::vector<Core::Renderer>& renderers);
 
-        void SetupCameraProperties(Core::Camera& camera);
+        void SetupCameraProperties(Core::Camera* camera);
+        void SetDirectionalLight(const Math::Vector3& direction, const Math::Vector3& color);
 
         bool BeginFrame();
         void EndFrame();

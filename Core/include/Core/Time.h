@@ -2,8 +2,8 @@
 
 namespace Time
 {
-	float deltaTime = 0.0F;
-	float time = 0.0F;
+	extern float deltaTime;
+	extern float time;
 
-	float timeScale = 1.0F;
+	extern float timeScale;
 }

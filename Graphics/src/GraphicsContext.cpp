@@ -21,6 +21,7 @@ namespace Graphics
     {
     private:
         GLFWwindow* _window;
+        Core::InputMaster* _inputMaster;
         VulkanContext _vkContext;
 
         VulkanSwapchain _swapchain;
@@ -54,10 +55,15 @@ namespace Graphics
             _meshRenderer.PrepareRenderers(renderers);
         }
 
-        void SetupCameraProperties(Core::Camera& camera)
+        void SetupCameraProperties(Core::Camera* camera)
         {
-            camera.SetAspectRatio(static_cast<float>(_swapchain.extent.width) / _swapchain.extent.height);
+            camera->SetAspectRatio(static_cast<float>(_swapchain.extent.width) / _swapchain.extent.height);
             _meshRenderer.SetupCameraProperties(camera);
+        }
+
+        void SetDirectionalLight(const Math::Vector3& direction, const Math::Vector3& color)
+        {
+            _meshRenderer.SetDirectionalLight(direction, color);
         }
 
         bool BeginFrame()
@@ -79,7 +85,7 @@ namespace Graphics
             _commandBuffer = _vkContext.CreateCommandBuffer(true);
 
             std::array<VkClearValue, 2> clearValues{};
-            clearValues[0].color = { 0.0f, 0.0f, 0.0f, 1.0f };
+            clearValues[0].color = { 0.04f, 0.05f, 0.1f, 1.0f };
             clearValues[1].depthStencil = { 1.0f, 0 };
 
             VkRenderPassBeginInfo renderPassInfo{};
@@ -383,8 +389,34 @@ namespace Graphics
 
         friend GraphicsContext;
         friend GraphicsContext CreateGraphicsContext(const WindowDescriptor& windowDescriptor);
+        friend void __GLFW__KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
+        friend void __GLFW__CursorPositionCallback(GLFWwindow* window, double xpos, double ypos);
     };
 #pragma endregion
+
+#pragma region GLFW Input
+    void __GLFW__KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
+    {
+        auto impl = static_cast<GraphicsContextImpl*>(glfwGetWindowUserPointer(window));
+
+        Core::InputEventPhase phase =
+            action == GLFW_PRESS ? Core::InputEventPhase::PRESS :
+            action == GLFW_REPEAT ? Core::InputEventPhase::REPEAT :
+            Core::InputEventPhase::RELEASED;
+
+        impl->_inputMaster->DispatchInputEvent({ key, phase });
+    }
+
+    void __GLFW__CursorPositionCallback(GLFWwindow* window, double xpos, double ypos)
+    {
+        auto impl = static_cast<GraphicsContextImpl*>(glfwGetWindowUserPointer(window));
+        auto mousePos = Math::Vector2(xpos, ypos);;
+        impl->_inputMaster->mouseDelta = mousePos - impl->_inputMaster->mousePos;
+        impl->_inputMaster->mousePos = mousePos;
+
+    }
+#pragma endregion
+
 
 #pragma region Graphics Context
     GraphicsContext::GraphicsContext() {}
@@ -394,8 +426,15 @@ namespace Graphics
         return *_window;
     }
 
+    void GraphicsContext::BindInputMaster(Core::InputMaster* inputMaster) { 
+        _impl->_inputMaster = inputMaster;;
+        glfwSetKeyCallback(static_cast<VulkanWindow*>(_window)->GetHandle(), __GLFW__KeyCallback);
+        glfwSetCursorPosCallback(static_cast<VulkanWindow*>(_window)->GetHandle(), __GLFW__CursorPositionCallback);
+    }
+
     void GraphicsContext::PrepareRenderers(std::vector<Core::Renderer>& renderers) { _impl->PrepareRenderers(renderers); }
-    void GraphicsContext::SetupCameraProperties(Core::Camera& camera) { _impl->SetupCameraProperties(camera); }
+    void GraphicsContext::SetupCameraProperties(Core::Camera* camera) { _impl->SetupCameraProperties(camera); }
+    void GraphicsContext::SetDirectionalLight(const Math::Vector3& direction, const Math::Vector3& color) { _impl->SetDirectionalLight(direction, color); }
 
     bool GraphicsContext::BeginFrame() { return _impl->BeginFrame(); }
     void GraphicsContext::EndFrame() { _impl->EndFrame(); }

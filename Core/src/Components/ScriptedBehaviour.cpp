@@ -4,17 +4,15 @@ namespace Core
 {
 	void ScriptedBehaviour::Initialize()
 	{
-		if (script != nullptr)
-		{
-			script->Initialize(GetGameObject(), GetTransform());
-		}
 	}
 
 	void ScriptedBehaviour::Update()
 	{
-		if (script != nullptr)
+		if (_instance._scriptObj != nullptr)
 		{
-			script->OnUpdate(GetGameObject(), GetTransform());
+			_instance.SetTransform(GetTransform()->GetPosition());
+			_instance.Update();
+			GetTransform()->SetPosition(_instance.GetPosition());
 		}
 	}
 }

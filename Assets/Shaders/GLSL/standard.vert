@@ -1,15 +1,21 @@
 #version 450
 #extension GL_ARB_separate_shader_objects : enable
 
-layout(binding = 0) uniform PerObjectBuffer {
+layout(set = 0, binding = 0) uniform PerObjectBuffer {
     mat4 M_LocalToWorld;
 } perObjectBuffer;
+
+// layout(set = 1, binding = 0) uniform PerMaterialBuffer {
+//    vec4 Color;
+// } perMaterialBuffer;
 
 layout(push_constant) uniform ConstantBuffer 
 { 
     mat4 M_View;
     mat4 M_Proj;
     vec3 W_CameraPos;
+    vec3 W_LightDir;
+    vec3 W_LightColor;
 } constantBuffer;
 
 layout(location = 0) in vec3 InPosition;

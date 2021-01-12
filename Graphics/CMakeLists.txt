@@ -16,7 +16,7 @@ add_library(Graphics STATIC
 	"src/Vulkan/VulkanSwapchain.cpp"
 	"src/Vulkan/VulkanWindow.cpp"
 
-	"src/Vulkan/VulkanRenderer.cpp"
+	
 
 	"src/imgui/imgui_impl_glfw.cpp"
 	"src/Vulkan/VulkanImGui.cpp"

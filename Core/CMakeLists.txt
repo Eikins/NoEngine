@@ -5,7 +5,7 @@ find_package(Assimp CONFIG REQUIRED)
 
 # Add source to this project's executable.
 add_executable (NoEngine
-	"NoEngine.cpp"
+	
 	"NoEngine.h"
 	"src/Transform.cpp"
 	"src/Components/Camera.cpp"
@@ -15,7 +15,7 @@ add_executable (NoEngine
 	"src/Assets/Scene.cpp" 
 	"src/Assets/Material.cpp"
 	"src/Assets/Asset.cpp"
-	"include/Core/Input/InputManager.h"
+	"include/Core/Input/InputMaster.h"
 	"include/Core/Layer.h"
 	"src/Layer.cpp"
 	"src/Components/Renderer.cpp"
@@ -33,8 +33,18 @@ add_executable (NoEngine
 	"src/Modules/GameManager.cpp"
 	"include/Core/Systems/System.h"
 	"include/Core/Modules/SystemManager.hpp"
- "src/Modules/SystemManager.cpp"
- "include/Core/Systems/PhysicsSystem.h" "src/Systems/PhysicsSystem.cpp" "include/Core/Systems/CollisionSystem.h" "include/Core/Components/Collider.h" "src/Systems/CollisionSystem.cpp" "include/Core/Components/Rigidbody.h")
+	"src/Modules/SystemManager.cpp"
+	"include/Core/Systems/PhysicsSystem.h" 
+	"src/Systems/PhysicsSystem.cpp" 
+	"include/Core/Systems/CollisionSystem.h" 
+	"include/Core/Components/Collider.h" 
+	"src/Systems/CollisionSystem.cpp" 
+	"include/Core/Components/Rigidbody.h" 
+	"include/Core/Systems/GraphicsSystem.h" 
+	"src/Systems/GraphicsSystem.cpp" 
+	"include/Core/Components/Light.h" 
+	"src/Time.cpp"
+	"src/Input/InputMaster.cpp" "include/Core/Systems/ScriptSystem.h" "src/Systems/ScriptSystem.cpp" "NoEngine.cpp")
 
 add_dependencies(NoEngine Math)
 add_dependencies(NoEngine Graphics)

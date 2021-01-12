@@ -5,3 +5,4 @@
 #include <iostream>
 
 // TODO: Reference additional headers your program requires here.
+__declspec(dllexport) void TestInternalCall();

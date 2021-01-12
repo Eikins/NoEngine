@@ -18,6 +18,7 @@ namespace Core
 	public:
 		Mesh* mesh = nullptr;
 		Material* material = nullptr;
+		bool hasChanged = true;
 
 		Renderer(GameObject* gameObject) : Component(gameObject) {}
 

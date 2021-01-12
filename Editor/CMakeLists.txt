@@ -19,6 +19,8 @@ target_include_directories(Editor PUBLIC
 
 	${CMAKE_CURRENT_LIST_DIR}/../Math/include
 	${CMAKE_CURRENT_LIST_DIR}/../Core/include
+	${CMAKE_CURRENT_LIST_DIR}/../Scripting/include
+	${CMAKE_CURRENT_LIST_DIR}/../ThirdParty/mono-2.0
 )
 
 target_link_libraries(Editor PUBLIC 

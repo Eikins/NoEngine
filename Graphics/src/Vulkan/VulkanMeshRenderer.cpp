@@ -1,13 +1,22 @@
 #include "Graphics/Vulkan/VulkanMeshRenderer.h"
 
+#include <array>
+
 #include "Graphics/Vulkan/VulkanUtils.hpp"
 
 namespace Graphics
 {
-	void VulkanMeshRenderer::SetupCameraProperties(Core::Camera& camera)
+	void VulkanMeshRenderer::SetupCameraProperties(Core::Camera* camera)
 	{
-		_constantBuffer.viewMatrix = camera.GetTransform()->GetLocalToWorldMatrix().InverseTR();
-		_constantBuffer.projectionMatrix = camera.GetProjectionMatrix();
+		_constantBuffer.viewMatrix = camera->GetTransform()->GetLocalToWorldMatrix().InverseTR();
+		_constantBuffer.projectionMatrix = camera->GetProjectionMatrix();
+		_constantBuffer.cameraWorldPosition = camera->GetTransform()->GetWorldPosition();
+	}
+
+	void VulkanMeshRenderer::SetDirectionalLight(const Math::Vector3& direction, const Math::Vector3& color)
+	{
+		_constantBuffer.directionalLightDirection = Math::Vector3::Normalize(direction);
+		_constantBuffer.directionalLightColor = color;
 	}
 
 	VulkanMeshRenderer::BakedMaterial* VulkanMeshRenderer::BakeMaterial(Core::Material* material)
@@ -17,15 +26,66 @@ namespace Graphics
 
 		// Create Layouts
 		{
-			// No custom descriptor set support yet
-			auto layoutBinding = VkCreate::DescriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, 0, 1);
-			auto descriptorSetLayoutCreateInfo = VkCreate::DescriptorSetLayoutCreateInfo(&layoutBinding, 1);
+			// Per Material Set Layout
+			{
+				// Material descriptors
+				auto& properties = material->GetPropertyBlock().Properties();
+				if (properties.size() > 0)
+				{
+					std::vector<VkDescriptorSetLayoutBinding> layoutBindings;
+					layoutBindings.push_back(VkCreate::DescriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_ALL_GRAPHICS, 0));
+					auto descriptorSetLayoutCreateInfo = VkCreate::DescriptorSetLayoutCreateInfo(layoutBindings.data(), layoutBindings.size());
 
-			if (vkCreateDescriptorSetLayout(_context->device, &descriptorSetLayoutCreateInfo, nullptr, &bakedMaterial.descriptorSetLayout) != VK_SUCCESS) {
-				throw std::runtime_error("Failed to create material descriptor set layout!");
+					if (vkCreateDescriptorSetLayout(_context->device, &descriptorSetLayoutCreateInfo, nullptr, &bakedMaterial.perMaterialSetLayout) != VK_SUCCESS) {
+						throw std::runtime_error("Failed to create per material descriptor set layout!");
+					}
+
+					// Create Descriptor set
+					auto descriptorSetAllocateInfo = VkCreate::DescriptorSetAllocateInfo(_descriptorPool, &bakedMaterial.perMaterialSetLayout, 1);
+					if (vkAllocateDescriptorSets(_context->device, &descriptorSetAllocateInfo, &bakedMaterial.descriptorSet) != VK_SUCCESS)
+					{
+						throw std::runtime_error("Couldn't create material descriptor set !");
+					}
+
+					// Create the uniform (Per Material) buffer
+					// We don't use a device local buffer here because we will update these values frequently
+					bakedMaterial.perMaterialBuffer = _context->CreateBuffer(
+						sizeof(Math::Vector4) * properties.size(),
+						VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+						VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
+					);
+					bakedMaterial.perMaterialBuffer.Bind();
+					bakedMaterial.perMaterialBuffer.Map();
+
+					// Bind buffer to the descriptor set
+					auto bufferInfo = VkCreate::DescriptorBufferInfo(bakedMaterial.perMaterialBuffer.buffer, 0, sizeof(Math::Vector4) * properties.size());
+					auto descriptorWrite = VkCreate::WriteDescriptorSet(bakedMaterial.descriptorSet, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0, nullptr);
+					descriptorWrite.pBufferInfo = &bufferInfo;
+					vkUpdateDescriptorSets(_context->device, 1, &descriptorWrite, 0, nullptr);
+				}
 			}
 
-			auto pipelineLayoutCreateInfo = VkCreate::PipelineLayoutCreateInfo(&bakedMaterial.descriptorSetLayout);
+			// Per Object Descriptor Set Layout
+			{
+				auto layoutBinding = VkCreate::DescriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, 0);
+				auto descriptorSetLayoutCreateInfo = VkCreate::DescriptorSetLayoutCreateInfo(&layoutBinding, 1);
+
+
+				if (vkCreateDescriptorSetLayout(_context->device, &descriptorSetLayoutCreateInfo, nullptr, &bakedMaterial.perObjectSetLayout) != VK_SUCCESS) {
+					throw std::runtime_error("Failed to create per object descriptor set layout!");
+				}
+			}
+
+			std::vector<VkDescriptorSetLayout> layouts;
+			if (bakedMaterial.descriptorSet != VK_NULL_HANDLE)
+			{
+				layouts = { bakedMaterial.perObjectSetLayout, bakedMaterial.perMaterialSetLayout };
+			}
+			else
+			{
+				layouts = { bakedMaterial.perObjectSetLayout };
+			}
+			auto pipelineLayoutCreateInfo = VkCreate::PipelineLayoutCreateInfo(layouts.data(), layouts.size());
 			pipelineLayoutCreateInfo.pushConstantRangeCount = 1;
 			pipelineLayoutCreateInfo.pPushConstantRanges = &_pushConstantRange;
 
@@ -189,33 +249,38 @@ namespace Graphics
 		return &bakedMesh;
 	}
 
-	VulkanMeshRenderer::BakedRenderer* VulkanMeshRenderer::BakeRenderer(Core::Renderer* renderer)
+	void VulkanMeshRenderer::CheckMeshAndMaterial(BakedRenderer& bakedRenderer)
 	{
-		BakedRenderer& bakedRenderer = _bakedRenderers.insert(std::make_pair(renderer, BakedRenderer())).first->second;
-		bakedRenderer.renderer = renderer;
-
-		auto bakedMaterialIt = _bakedMaterials.find(renderer->material);
+		auto bakedMaterialIt = _bakedMaterials.find(bakedRenderer.renderer->material);
 		if (bakedMaterialIt == _bakedMaterials.end())
 		{
-			bakedRenderer.bakedMaterial = BakeMaterial(renderer->material);
+			bakedRenderer.bakedMaterial = BakeMaterial(bakedRenderer.renderer->material);
 		}
 		else
 		{
 			bakedRenderer.bakedMaterial = &bakedMaterialIt->second;
 		}
 
-		auto bakedMeshIt = _bakedMeshes.find(renderer->mesh);
+		auto bakedMeshIt = _bakedMeshes.find(bakedRenderer.renderer->mesh);
 		if (bakedMeshIt == _bakedMeshes.end())
 		{
-			bakedRenderer.bakedMesh = BakeMesh(renderer->mesh);
+			bakedRenderer.bakedMesh = BakeMesh(bakedRenderer.renderer->mesh);
 		}
 		else
 		{
 			bakedRenderer.bakedMesh = &bakedMeshIt->second;
 		}
+	}
+
+	VulkanMeshRenderer::BakedRenderer* VulkanMeshRenderer::BakeRenderer(Core::Renderer* renderer)
+	{
+		BakedRenderer& bakedRenderer = _bakedRenderers.insert(std::make_pair(renderer, BakedRenderer())).first->second;
+		bakedRenderer.renderer = renderer;
+
+		CheckMeshAndMaterial(bakedRenderer);
 
 		// Create Descriptor set
-		auto descriptorSetAllocateInfo = VkCreate::DescriptorSetAllocateInfo(_descriptorPool, &bakedRenderer.bakedMaterial->descriptorSetLayout, 1);
+		auto descriptorSetAllocateInfo = VkCreate::DescriptorSetAllocateInfo(_descriptorPool, &bakedRenderer.bakedMaterial->perObjectSetLayout, 1);
 		if (vkAllocateDescriptorSets(_context->device, &descriptorSetAllocateInfo, &bakedRenderer.descriptorSet) != VK_SUCCESS)
 		{
 			throw std::runtime_error("Couldn't create mesh descriptor set !");
@@ -245,11 +310,15 @@ namespace Graphics
 		for (int i = 0; i < renderers.size(); i++)
 		{
 			auto renderer = &renderers[i];
-			auto bakedRendererIt = _bakedRenderers.find(renderer);
-
+			auto& bakedRendererIt = _bakedRenderers.find(renderer);
 			if (bakedRendererIt == _bakedRenderers.end())
 			{
 				BakeRenderer(renderer);
+				renderer->hasChanged = false;
+			}
+			else if (renderer->hasChanged)
+			{
+				CheckMeshAndMaterial(bakedRendererIt->second);
 			}
 		}
 	}
@@ -271,6 +340,22 @@ namespace Graphics
 
 				memcpy(bakedRenderer.perObjectBuffer.mappedMemory, &perObjectBufferData, sizeof(perObjectBufferData));
 				bakedRenderer.perObjectBuffer.Flush();
+
+				if (renderer->material->GetPropertyBlock().HasChanged())
+				{
+					auto& propertyBlock = renderer->material->GetPropertyBlock();
+					auto bakedMaterialIt = _bakedMaterials.find(renderer->material);
+					if (bakedMaterialIt != _bakedMaterials.end())
+					{
+						auto& bakedMaterial = bakedMaterialIt->second;
+						for (size_t i = 0; i < propertyBlock.Properties().size(); i++)
+						{
+							auto ptr = static_cast<Math::Vector4*>(bakedMaterial.perMaterialBuffer.mappedMemory) + i;
+							memcpy(ptr, &propertyBlock.Properties()[i].vectorValue, sizeof(Math::Vector4));
+						}
+						bakedMaterial.perMaterialBuffer.Flush();
+					}
+				}
 			}
 		}
 	}
@@ -288,6 +373,7 @@ namespace Graphics
 		for (int i = 0; i < renderers.size(); i++)
 		{
 			auto renderer = &renderers[i];
+			if (renderer->IsEnabled() == false || renderer->GetGameObject()->IsActive() == false) continue;
 			auto bakedRendererIt = _bakedRenderers.find(renderer);
 
 			if (bakedRendererIt != _bakedRenderers.end())
@@ -295,9 +381,19 @@ namespace Graphics
 				auto& bakedRenderer = bakedRendererIt->second;
 				auto bakedMaterial = bakedRenderer.bakedMaterial;
 				auto bakedMesh = bakedRenderer.bakedMesh;
+				
+				std::vector<VkDescriptorSet> descriptorSets;
+				if (bakedMaterial->descriptorSet != VK_NULL_HANDLE)
+				{
+					descriptorSets = { bakedRenderer.descriptorSet, bakedMaterial->descriptorSet };
+				}
+				else
+				{
+					descriptorSets = { bakedRenderer.descriptorSet };
+				}
 				vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, bakedMaterial->pipeline);
 				vkCmdPushConstants(commandBuffer, bakedMaterial->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(ConstantBuffer), &_constantBuffer);
-				vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, bakedMaterial->pipelineLayout, 0, 1, &bakedRenderer.descriptorSet, 0, nullptr);
+				vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, bakedMaterial->pipelineLayout, 0, descriptorSets.size(), descriptorSets.data(), 0, nullptr);
 				vkCmdBindVertexBuffers(commandBuffer, 0, 1, &bakedMesh->vertices.buffer, offsets);
 				vkCmdBindIndexBuffer(commandBuffer, bakedMesh->indices.buffer, 0, VK_INDEX_TYPE_UINT16);
 				vkCmdDrawIndexed(commandBuffer, bakedMesh->indexCount, 1, 0, 0, 0);
@@ -329,7 +425,7 @@ namespace Graphics
 		// Create the descriptor pool
 		VkDescriptorPoolSize poolSizes[] =
 		{
-			{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, maximumRenderers }
+			{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, maximumRenderers + maximumMaterials }
 		};
 
 		auto descriptorPoolCreateInfo = VkCreate::DescriptorPoolCreateInfo(1, poolSizes, maximumRenderers);
@@ -351,7 +447,12 @@ namespace Graphics
 			auto& bakedMaterial = it.second;
 			vkDestroyPipeline(_context->device, bakedMaterial.pipeline, nullptr);
 			vkDestroyPipelineLayout(_context->device, bakedMaterial.pipelineLayout, nullptr);
-			vkDestroyDescriptorSetLayout(_context->device, bakedMaterial.descriptorSetLayout, nullptr);
+			if (bakedMaterial.perMaterialSetLayout != VK_NULL_HANDLE)
+			{
+				vkDestroyDescriptorSetLayout(_context->device, bakedMaterial.perMaterialSetLayout, nullptr);
+			}
+			vkDestroyDescriptorSetLayout(_context->device, bakedMaterial.perObjectSetLayout, nullptr);
+			bakedMaterial.perMaterialBuffer.Release();
 		}
 
 		for (auto& it : _bakedRenderers) {

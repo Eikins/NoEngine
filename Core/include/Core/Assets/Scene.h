@@ -21,8 +21,9 @@ namespace Core
 		friend class Editor::SceneEditors;
 #endif
 	private:
-		std::vector<Transform*> _rootTransforms;
 	public:
+		std::vector<Transform*> rootTransforms;
+
 		Scene(std::string name) : Asset(name) {}
 
 		void Update();

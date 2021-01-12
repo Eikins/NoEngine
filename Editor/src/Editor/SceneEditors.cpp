@@ -12,7 +12,17 @@ namespace Editor
 		}
 		if (transform->_children.size() == 0)
 		{
-			ImGui::TreeNodeEx(transform->_gameObject->_name.c_str(), flags | ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen);
+			if (transform->_gameObject->IsActive() == false)
+			{
+				auto color = ImGui::GetStyle().Colors[ImGuiCol_TextDisabled];
+				ImGui::PushStyleColor(ImGuiCol_Text, color);
+				ImGui::TreeNodeEx(transform->_gameObject->_name.c_str(), flags | ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen);
+				ImGui::PopStyleColor();
+			}
+			else
+			{
+				ImGui::TreeNodeEx(transform->_gameObject->_name.c_str(), flags | ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen);
+			}
 			if (ImGui::IsItemClicked(0))
 			{
 				isClicked = true;
@@ -20,11 +30,24 @@ namespace Editor
 		}
 		else
 		{
-			bool isOpen = ImGui::TreeNodeEx(transform->_gameObject->_name.c_str(), flags | ImGuiTreeNodeFlags_OpenOnArrow);
+			bool isOpen;
+			if (transform->_gameObject->IsActive() == false)
+			{
+				auto color = ImGui::GetStyle().Colors[ImGuiCol_TextDisabled];
+				ImGui::PushStyleColor(ImGuiCol_Text, color);
+				isOpen = ImGui::TreeNodeEx(transform->_gameObject->_name.c_str(), flags | ImGuiTreeNodeFlags_OpenOnArrow);
+				ImGui::PopStyleColor();
+			}
+			else
+			{
+				isOpen = ImGui::TreeNodeEx(transform->_gameObject->_name.c_str(), flags | ImGuiTreeNodeFlags_OpenOnArrow);
+			}
+
 			if (ImGui::IsItemClicked(0))
 			{
 				isClicked = true;
 			}
+
 			if (isOpen)
 			{
 				for (uint32_t i = 0; i < transform->_children.size(); i++)

@@ -35,6 +35,8 @@ namespace Core
         Math::Vector3 _position = Math::Vector3::Zero;
         Math::Quaternion _rotation = Math::Quaternion::Identity;
         Math::Vector3 _scale = Math::Vector3::One;
+
+        Math::Vector3 _eulerAngles = Math::Vector3::Zero;
     
         bool _hasChanged = false;
 
@@ -44,7 +46,7 @@ namespace Core
 
         bool HasParentChanged();
     
-        Transform(GameObject* gameObject, Transform* parent);
+        Transform(GameObject* gameObject);
         Transform() {}
     public:
         ~Transform();
@@ -61,11 +63,13 @@ namespace Core
         // Transformations
         void SetPosition(const Math::Vector3& position);
         void SetRotation(const Math::Quaternion& rotation);
+        void SetEulerAngles(const Math::Vector3& eulerAngles);
         void SetScale(const Math::Vector3& scale);
 
         inline Math::Vector3 GetPosition() const { return _position; }
         inline Math::Quaternion GetRotation() const { return _rotation; }
         inline Math::Vector3 GetScale() const { return _scale; }
+        inline Math::Vector3 GetEulerAngles() const { return _eulerAngles; }
 
         inline Math::Vector3 GetWorldPosition() { return GetLocalToWorldMatrix().GetTranslation(); }
         inline Math::Vector3 GetLossyScale() { return GetLocalToWorldMatrix().GetScale(); }

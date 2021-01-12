@@ -6,10 +6,9 @@ namespace Core
 {
 #pragma region Constructor / Destructor
 
-    Transform::Transform(GameObject* gameObject, Transform* parent)
+    Transform::Transform(GameObject* gameObject)
     {
         _gameObject = gameObject;
-        SetParent(parent);
     }
 
     Transform::~Transform()
@@ -105,6 +104,17 @@ namespace Core
         if (_rotation != rotation)
         {
             _rotation = rotation;
+            _eulerAngles = rotation.GetEulerAngles();
+            _hasChanged = true;
+        }
+    }
+
+    void Transform::SetEulerAngles(const Math::Vector3& eulerAngles)
+    {
+        if (_eulerAngles != eulerAngles)
+        {
+            _eulerAngles = eulerAngles;
+            _rotation = Quaternion::Euler(_eulerAngles);
             _hasChanged = true;
         }
     }
@@ -138,16 +148,19 @@ namespace Core
 
     Vector3 Transform::RightVector()
     {
+        if (_hasChanged) GetLocalToWorldMatrix();
         return Vector3::Normalize(Vector3(_localToWorldMatrix.m_0_0, _localToWorldMatrix.m_1_0, _localToWorldMatrix.m_2_0));
     }
 
     Vector3 Transform::UpVector()
     {
+        if (_hasChanged) GetLocalToWorldMatrix();
         return Vector3::Normalize(Vector3(_localToWorldMatrix.m_0_1, _localToWorldMatrix.m_1_1, _localToWorldMatrix.m_2_1));
     }
 
     Vector3 Transform::ForwardVector()
     {
+        if (_hasChanged) GetLocalToWorldMatrix();
         return Vector3::Normalize(Vector3(_localToWorldMatrix.m_0_2, _localToWorldMatrix.m_1_2, _localToWorldMatrix.m_2_2));
     }
 
@@ -158,6 +171,10 @@ namespace Core
             _transformMatrix = Matrix4x4::TRS(_position, _rotation, _scale);
             _localToWorldMatrix = _parent == nullptr ? _transformMatrix : _parent->GetLocalToWorldMatrix() * _transformMatrix;
             _hasChanged = false;
+            for (auto& transform : _children)
+            {
+                transform->_hasChanged = true;
+            }
         } else if (HasParentChanged())
         {
             _localToWorldMatrix = _parent->GetLocalToWorldMatrix() * _transformMatrix;

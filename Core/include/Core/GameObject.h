@@ -29,12 +29,15 @@ namespace Core
 		friend class GameManager;
 	private:
 		Signature _signature;
-		std::string _name = "";
 		Transform _transform;
+		bool _active = true;
+		std::string _name = "";
 
-		GameObject() {}
-		void Init(std::string name, Transform* parent = nullptr);
+		GameObject(const std::string name) : _name(name) {}
+		void Init();
 	public:
 		Transform* GetTransform();
+		inline bool IsActiveSelf() const { return _active; }
+		bool IsActive() const;
 	};
 }

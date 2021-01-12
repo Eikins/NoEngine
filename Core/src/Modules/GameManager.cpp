@@ -9,7 +9,7 @@ namespace Core
 		_systemManager = std::make_unique<SystemManager>();
 	}
 
-	GameObject* GameManager::CreateGameObject(std::string name, Transform* parent)
+	GameObject* GameManager::CreateGameObject(const std::string& name, Transform* parent)
 	{
 		return _gameObjectManager->CreateGameObject(name, parent);
 	}
@@ -19,5 +19,15 @@ namespace Core
 		_componentManager->GameObjectRemoved(gameObject);
 		_systemManager->OnGameObjectRemoved(gameObject);
 		_gameObjectManager->DestroyGameObject(gameObject);
+	}
+
+	void GameManager::SetScene(Scene* scene)
+	{
+		_scene = scene;
+	}
+
+	Scene* GameManager::GetScene()
+	{
+		return _scene;
 	}
 }

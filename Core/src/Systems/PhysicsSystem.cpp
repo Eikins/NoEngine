@@ -30,6 +30,8 @@ namespace Core
 		{
 			auto aabb = _gameManager->GetComponent<AABBCollider>(gameObject);
 			auto rb = _gameManager->GetComponent<Rigidbody>(gameObject);
+
+			if (aabb->IsEnabled() == false || rb->IsEnabled() == false || gameObject->IsActive() == false) continue;
 			
 			rb->velocity += Gravity * dt;
 			auto translation = rb->velocity * dt;
