@@ -1,8 +1,8 @@
 #include "Core/Systems/ScriptSystem.h"
-
 #include "Core/Modules/GameManager.hpp"
-
 #include "Core/Time.h"
+
+#include "Scripting/InternalCall.h"
 
 namespace Core
 {
@@ -37,6 +37,11 @@ namespace Core
 			"Scripts/Core/Time.cs",
 			"Scripts/Core/Script.cs",
 			"Scripts/Core/Material.cs",
+			"Scripts/Core/Input.cs",
+			"Scripts/Core/Math/Math.cs",
+			"Scripts/Core/Math/Vector2.cs",
+			"Scripts/Core/Math/Vector3.cs",
+			"Scripts/Core/Math/Quaternion.cs",
 			"Scripts/Core/Components/Component.cs",
 			"Scripts/Core/Components/Renderer.cs"
 		};
@@ -49,13 +54,7 @@ namespace Core
 		_runtime.Compile("CompiledScripts/NoEngine.dll", args);
 		_runtime.LoadNoEngineAssembly("CompiledScripts/NoEngine.dll");
 
-		_runtime.RegisterInternalCall("NoEngine.Script::GetComponentHandle", Scripting::ScriptInstance::Script_GetComponentHandle);
-
-		_runtime.RegisterInternalCall("NoEngine.Renderer::GetMaterial", Scripting::ScriptInstance::Script_GetMaterial);
-		_runtime.RegisterInternalCall("NoEngine.Material::SetColor", Scripting::ScriptInstance::Script_SetColor);
-
-		_runtime.RegisterInternalCall("NoEngine.Transform::SetPosition", Scripting::ScriptInstance::Script_SetPosition);
-		_runtime.RegisterInternalCall("NoEngine.Transform::GetPosition", Scripting::ScriptInstance::Script_GetPosition);
+		Scripting::InternalCall::RegisterInternalCalls(_runtime);
 	}
 
 	void ScriptSystem::CompileAndLoadScripts()
@@ -66,7 +65,13 @@ namespace Core
 
 		for (auto& sb : scripts)
 		{
-			scriptPaths.insert(sb.script->GetPath());
+			for (auto& script : sb.GetScripts())
+			{
+				if (script != nullptr)
+				{
+					scriptPaths.insert(script->GetPath());
+				}
+			}
 		}
 
 		for (auto& path : scriptPaths)
@@ -80,8 +85,12 @@ namespace Core
 
 		for (auto& sb : scripts)
 		{
-			sb._instance.SetName("Scripts", sb.script->GetName());
-			_runtime.BindScript("Scripts", sb._instance, sb.GetTransform());
+			auto& instances = sb.GetInstances();
+			for (size_t i = 0; i < instances.size(); i++)
+			{
+				instances[i].SetName("Scripts", sb.GetScripts()[i]->GetName());
+				_runtime.BindScript("Scripts", instances[i], sb.GetTransform());
+			}
 		}
 	}
 
@@ -97,6 +106,7 @@ namespace Core
 	void ScriptSystem::ScriptUpdate()
 	{
 		_runtime.GetEnvironment().SetTime(Time::time, Time::deltaTime);
+		_runtime.GetEnvironment().SetMousePos(InputMaster::mousePos);
 		auto& scriptBehaviours = _gameManager->GetAllComponents<ScriptedBehaviour>();
 		for (auto& behaviour : scriptBehaviours)
 		{

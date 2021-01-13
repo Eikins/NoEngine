@@ -4,7 +4,7 @@
 cmake_minimum_required (VERSION 3.8)
 
 # Add source to this project's executable.
-add_library(Scripting STATIC "src/Runtime.cpp" "include/Scripting/Environment.h" "src/Environment.cpp" "include/Scripting/ScriptInstance.h" "src/ScriptInstance.cpp")
+add_library(Scripting STATIC "src/Runtime.cpp" "include/Scripting/Environment.h" "src/Environment.cpp" "include/Scripting/ScriptInstance.h" "src/ScriptInstance.cpp" "include/Scripting/InternalCall.h" "src/InternalCall.cpp")
 
 target_include_directories(Scripting PUBLIC
 	${CMAKE_CURRENT_LIST_DIR}/include 

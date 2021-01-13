@@ -109,6 +109,9 @@ public:
         clownfishMaterial.GetPropertyBlock().SetVector("IndirectColor", Math::Vector4(0.05, 0.05, 0.15, 1.0));
 
         Script sinWaveScript("SinWave", "Scripts/SinWave.cs");
+        Script rotatorScript("Rotator", "Scripts/Rotator.cs");
+        Script colorChangerScript("ColorChanger", "Scripts/ColorChanger.cs");
+        Script cameraControllerScript("CameraController", "Scripts/CameraController.cs");
 
         // Create Game Objects
         GameObject* cameraObject = _gameManager.CreateGameObject("Main Camera");
@@ -127,6 +130,9 @@ public:
 
         // Components
         Camera& mainCamera = _gameManager.AddComponent<Camera>(cameraObject);
+        auto& cameraScriptBehaviour = _gameManager.AddComponent<ScriptedBehaviour>(cameraObject);
+        cameraScriptBehaviour.AddScript(&cameraControllerScript);
+        _inputMaster.RegisterEventReceiver(&cameraScriptBehaviour.GetInstances()[0]);
 
         auto& light = _gameManager.AddComponent<Light>(mainLightObject);
         light._type = LightType::DIRECTIONAL;
@@ -149,7 +155,12 @@ public:
         barracudaAABB.bounds = Bounds(Vector3(0, 0.7f, 0), Vector3(10, 2, 1));
 
         auto& clownfishScript = _gameManager.AddComponent<ScriptedBehaviour>(clownfishObject);
-        clownfishScript.script = &sinWaveScript;
+        clownfishScript.AddScript(&colorChangerScript);
+        clownfishScript.AddScript(&rotatorScript);
+
+        auto& barracudaScript = _gameManager.AddComponent<ScriptedBehaviour>(barracudaObject);
+        barracudaScript.AddScript(&rotatorScript);
+        barracudaScript.AddScript(&sinWaveScript);
 
         // Set Transforms
         emptyObject->GetTransform()->SetScale(Vector3::One * 0.2f);

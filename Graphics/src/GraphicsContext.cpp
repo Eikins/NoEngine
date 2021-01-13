@@ -399,12 +399,20 @@ namespace Graphics
     {
         auto impl = static_cast<GraphicsContextImpl*>(glfwGetWindowUserPointer(window));
 
-        Core::InputEventPhase phase =
-            action == GLFW_PRESS ? Core::InputEventPhase::PRESS :
-            action == GLFW_REPEAT ? Core::InputEventPhase::REPEAT :
-            Core::InputEventPhase::RELEASED;
+        Core::InputEventPhase phase;
+        switch (action)
+        {
+        case GLFW_PRESS:
+            phase = Core::InputEventPhase::PRESS;
+            break;
+        case GLFW_REPEAT:
+            phase = Core::InputEventPhase::REPEAT;
+            break;
+        default:
+            phase = Core::InputEventPhase::RELEASED;
+        }
 
-        impl->_inputMaster->DispatchInputEvent({ key, phase });
+        impl->_inputMaster->DispatchInputEvent({ phase, key });
     }
 
     void __GLFW__CursorPositionCallback(GLFWwindow* window, double xpos, double ypos)

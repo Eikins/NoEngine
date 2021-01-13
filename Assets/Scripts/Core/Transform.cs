@@ -3,36 +3,53 @@ using System;
 
 namespace NoEngine
 {
-    public struct Vector3
-    {
-        public float x, y, z;
-
-        public Vector3(float x, float y, float z)
-        {
-            this.x = x;
-            this.y = y;
-            this.z = z;
-        }
-    }
-
     public struct Transform
     {
         private IntPtr _nativeHandle;
 
-        public void SetPosition(Vector3 position)
+        public Vector3 Position
         {
-            SetPosition(_nativeHandle, position);
+            get { return GetPosition(_nativeHandle); }
+            set { SetPosition(_nativeHandle, value); }
         }
 
-        public Vector3 GetPosition()
+        public Quaternion Rotation
         {
-            return GetPosition(_nativeHandle);
+            get { return GetRotation(_nativeHandle); }
+            set { SetRotation(_nativeHandle, value); }
         }
 
+        public Vector3 Scale
+        {
+            get { return GetScale(_nativeHandle); }
+            set { SetScale(_nativeHandle, value); }
+        }
+
+        public Vector3 Right { get { return GetRightVector(_nativeHandle); } }
+        public Vector3 Up { get { return GetUpVector(_nativeHandle); } }
+        public Vector3 Forward { get { return GetForwardVector(_nativeHandle); } }
+
+        #region Internal Calls
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         extern private static void SetPosition(IntPtr handle, Vector3 position);
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        extern private static void SetRotation(IntPtr handle, Quaternion rotation);
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        extern private static void SetScale(IntPtr handle, Vector3 scale);
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         extern private static Vector3 GetPosition(IntPtr handle);
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        extern private static Quaternion GetRotation(IntPtr handle);
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        extern private static Vector3 GetScale(IntPtr handle);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        extern private static Vector3 GetRightVector(IntPtr handle);
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        extern private static Vector3 GetUpVector(IntPtr handle);
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        extern private static Vector3 GetForwardVector(IntPtr handle);
+        #endregion
     }
 }

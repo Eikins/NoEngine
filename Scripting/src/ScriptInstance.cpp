@@ -3,9 +3,11 @@
 #include <mono/metadata/assembly.h>
 #include <mono/metadata/attrdefs.h>
 
-#include "Core/Modules/GameManager.hpp"
+#include "Scripting/Runtime.h"
 
+#include "Core/Modules/GameManager.hpp"
 #include "Core/Transform.h"
+
 
 namespace Scripting
 {
@@ -17,17 +19,19 @@ namespace Scripting
 		_name = name;
 	}
 
-	void ScriptInstance::Bind(MonoDomain* domain, MonoAssembly* assembly, Core::Transform* transform)
+	void ScriptInstance::Bind(Runtime* runtime, MonoAssembly* assembly, Core::Transform* transform)
 	{
+		_environment = &runtime->GetEnvironment();
 		MonoImage* image =mono_assembly_get_image(assembly);
 
 		// Create C# script & transform
 		auto scriptClass = mono_class_from_name(image, _namespace.c_str(), _name.c_str());
-		_scriptObj = mono_object_new(domain, scriptClass);
+		_scriptObj = mono_object_new(runtime->_domain, scriptClass);
 
 		// Get update func
 		auto monoInit = mono_class_get_method_from_name(scriptClass, "Init", 0);
 		auto monoUpdate = mono_class_get_method_from_name(scriptClass, "Update", 0);
+		auto monoOnInput = mono_class_get_method_from_name(scriptClass, "OnInput", 1);
 		if (monoInit != nullptr)
 		{
 			_initMethodPtr = mono_method_get_unmanaged_thunk(monoInit);
@@ -36,6 +40,11 @@ namespace Scripting
 		if (monoUpdate != nullptr)
 		{
 			_updateMethodPtr = mono_method_get_unmanaged_thunk(monoUpdate);
+		}
+
+		if (monoOnInput != nullptr)
+		{
+			_onInputMethodPtr = mono_method_get_unmanaged_thunk(monoOnInput);
 		}
 
 		_publicFields.size();
@@ -74,38 +83,13 @@ namespace Scripting
 		MonoException* exception = nullptr;
 		reinterpret_cast<MonoVoidMethod>(_updateMethodPtr)(_scriptObj, &exception);
 	}
-#pragma endregion
 
-#pragma region Internal Calls
-	void ScriptInstance::Script_SetPosition(Core::Transform* transform, Math::Vector3 position)
+	void ScriptInstance::OnInput(const Core::InputEvent& event)
 	{
-		transform->SetPosition(position);
-	}
-
-	Math::Vector3 ScriptInstance::Script_GetPosition(Core::Transform* transform)
-	{
-		return transform->GetPosition();
-	}
-
-	Core::Component* ScriptInstance::Script_GetComponentHandle(Core::Transform* transform, int type)
-	{
-		auto ptr = static_cast<Core::Component*>(
-			Core::GameManager::Get()->GetComponentRaw(transform->GetGameObject(), type)
-		);
-		return ptr;
-	}
-
-	Core::Material* ScriptInstance::Script_GetMaterial(Core::Renderer* renderer)
-	{
-		return renderer->material;
-	}
-
-	void ScriptInstance::Script_SetColor(Core::Material* material, MonoString* str, Math::Vector4 color)
-	{
-		auto& name = std::string(mono_string_to_utf8(str));
-		material->GetPropertyBlock().SetVector(name, color);
+		if (_onInputMethodPtr == nullptr) return;
+		MonoException* exception = nullptr;
+		auto eventObject = _environment->BoxInputEvent(event);
+		reinterpret_cast<MonoOnInputMethod>(_onInputMethodPtr)(_scriptObj, eventObject, &exception);
 	}
 #pragma endregion
-
-
 }

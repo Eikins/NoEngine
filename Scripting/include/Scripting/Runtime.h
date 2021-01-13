@@ -14,6 +14,8 @@ namespace Scripting
 {
 	class Runtime
 	{
+		friend class Environment;
+		friend class ScriptInstance;
 	private:
 		MonoDomain* _domain;
 		std::unordered_map<std::string, MonoAssembly*> _assemblies;

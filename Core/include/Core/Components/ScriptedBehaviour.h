@@ -11,13 +11,16 @@ namespace Core
 	{
 		friend class ScriptSystem;
 	private:
-		Scripting::ScriptInstance _instance;
+		std::vector<Scripting::ScriptInstance> _instances;
+		std::vector<Script*> _scripts;
 	public:
-		Script* script = nullptr;
 
 		ScriptedBehaviour(GameObject* gameObject) : Component(gameObject) {}
 
-		inline Scripting::ScriptInstance& GetInstance() { return _instance; }
+		inline std::vector<Scripting::ScriptInstance>& GetInstances() { return _instances; }
+		inline std::vector<Script*>& GetScripts() { return _scripts; }
+
+		void AddScript(Script* script);
 
 		void Init();
 		void Update();

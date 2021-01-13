@@ -128,19 +128,19 @@
 
 namespace Core
 {
-	enum class InputEventPhase
+	enum class InputEventPhase : uint32_t
 	{
-		PRESS,
-		REPEAT,
-		RELEASED
+		PRESS = 0,
+		REPEAT = 1,
+		RELEASED = 2
 	};
 
-	typedef int InputKeyCode;
+	typedef int32_t InputKeyCode;
 
 	struct InputEvent
 	{
-		InputKeyCode keyCode;
 		InputEventPhase phase;
+		InputKeyCode keyCode;
 	};
 
 	class IInputEventReceiver

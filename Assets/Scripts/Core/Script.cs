@@ -13,9 +13,9 @@ namespace NoEngine
 
         private Transform _transform = default;
 
-        protected Transform transform
+        protected ref Transform transform
         {
-            get { return _transform; }
+            get { return ref _transform; }
         }
 
         protected T GetComponent<T>() where T : Component

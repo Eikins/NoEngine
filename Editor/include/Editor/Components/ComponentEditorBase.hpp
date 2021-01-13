@@ -105,8 +105,6 @@
 					if (sb != nullptr)
 					{
 						ImGui::PushID(4);
-						ImGui::Checkbox("", &static_cast<Core::Component*>(sb)->_enabled);
-						ImGui::SameLine();
 						DrawScriptedBehaviour(sb);
 						ImGui::PopID();
 					}
@@ -204,34 +202,41 @@
 
 			static void DrawScriptedBehaviour(Core::ScriptedBehaviour* behaviour)
 			{
-				if (behaviour->script == nullptr)
+				if (behaviour->GetScripts().empty())
 				{
-					if (ImGui::CollapsingHeader("Missing Script (Script)", ImGuiTreeNodeFlags_DefaultOpen))
+					if (ImGui::CollapsingHeader("No Script Attached", ImGuiTreeNodeFlags_DefaultOpen))
 					{
 						InputAsset("Script", nullptr);
 					}
 				}
 				else
 				{
-					if (ImGui::CollapsingHeader((behaviour->script->GetName() + " (Script)").c_str(), ImGuiTreeNodeFlags_DefaultOpen))
+					for (size_t i = 0; i < behaviour->GetScripts().size(); i++)
 					{
-						InputAsset("Script", behaviour->script);
-						auto& fields = behaviour->GetInstance().GetPublicFields();
-						for (auto& field : fields)
+						auto& script = behaviour->GetScripts()[i];
+						auto& instance = behaviour->GetInstances()[i];
+						ImGui::Checkbox("", &instance.enabled);
+						ImGui::SameLine();
+						if (ImGui::CollapsingHeader((script->GetName() + " (Script)").c_str(), ImGuiTreeNodeFlags_DefaultOpen))
 						{
-							std::string name = field.name;
-							name[0] = toupper(name[0]);
-							switch (field.type)
+							InputAsset("Script", script);
+							auto& fields = instance.GetPublicFields();
+							for (auto& field : fields)
 							{
-							case Scripting::FieldType::FLOAT:
+								std::string name = field.name;
+								name[0] = toupper(name[0]);
+								switch (field.type)
 								{
-									float value = behaviour->GetInstance().GetFieldValue<float>(field.handle);
+								case Scripting::FieldType::FLOAT:
+								{
+									float value = instance.GetFieldValue<float>(field.handle);
 									if (ImGui::DragFloat(name.c_str(), &value, 0.1f))
 									{
-										behaviour->GetInstance().SetFieldValue<float>(field.handle, value);
+										instance.SetFieldValue<float>(field.handle, value);
 									}
 								}
 								break;
+								}
 							}
 						}
 					}

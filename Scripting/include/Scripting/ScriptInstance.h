@@ -3,11 +3,11 @@
 #include <mono/jit/jit.h>
 #include <vector>
 
+#include "Environment.h"
+
+#include "Core/Input/InputMaster.h"
 #include "Core/Transform.h"
-#include "Math/Math.h"
-#include "Core/Components/Component.h"
-#include "Core/Components/Renderer.h"
-#include "Core/Assets/Material.h"
+
 
 namespace Core
 {
@@ -17,7 +17,8 @@ namespace Core
 
 namespace Scripting
 {
-	typedef void (*MonoVoidMethod)(MonoObject *object, MonoException** exception);
+	typedef void (__stdcall *MonoVoidMethod)(MonoObject *object, MonoException** exception);
+	typedef void (__stdcall *MonoOnInputMethod)(MonoObject* object, MonoObject* inputEvent, MonoException** exception);
 
 	enum class FieldType
 	{
@@ -32,26 +33,31 @@ namespace Scripting
 		void* handle;
 	};
 
-	class ScriptInstance
+	class ScriptInstance : public Core::IInputEventReceiver
 	{
 		friend class Runtime;
 		friend class Core::ScriptedBehaviour;
 		friend class Core::ScriptSystem;
 	private:
+		Environment* _environment = nullptr;
 		MonoObject* _scriptObj = nullptr;
 		void* _initMethodPtr = nullptr;
 		void* _updateMethodPtr = nullptr;
-		std::string _namespace;
-		std::string _name;
+		void* _onInputMethodPtr = nullptr;
 		std::vector<FieldInfo> _publicFields;
+		std::string _namespace = "";
+		std::string _name = "";
 
 		ScriptInstance() : _publicFields() {}
-		void Bind(MonoDomain* domain, MonoAssembly* assembly, Core::Transform* transform);
+		void Bind(Runtime* runtime, MonoAssembly* assembly, Core::Transform* transform);
 	public:
+		bool enabled = true;
+
 		void SetName(const std::string& namespc, const std::string& name);
 
 		void Init();
 		void Update();
+		virtual void OnInput(const Core::InputEvent& event) override;
 
 		inline std::vector<FieldInfo>& GetPublicFields() { return _publicFields; }
 
@@ -68,14 +74,5 @@ namespace Scripting
 		{
 			mono_field_set_value(_scriptObj, static_cast<MonoClassField*>(handle), &value);
 		}
-	private:
-#pragma region Internal Calls
-		static void Script_SetPosition(Core::Transform* transform, Math::Vector3 position);
-		static Math::Vector3 Script_GetPosition(Core::Transform* transform);
-		static Core::Component* Script_GetComponentHandle(Core::Transform*, int type);
-		static Core::Material* Script_GetMaterial(Core::Renderer* renderer);
-		static void Script_SetColor(Core::Material* material, MonoString* str, Math::Vector4 color);
-#pragma endregion
-
 	};
 }

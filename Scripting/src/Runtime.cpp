@@ -52,7 +52,7 @@ namespace Scripting
 	void Runtime::LoadNoEngineAssembly(const std::string& path)
 	{
 		LoadAssembly("NoEngine", path);
-		_mainEnvironment.Initialize(_domain, _assemblies["NoEngine"]);
+		_mainEnvironment.Initialize(this, _assemblies["NoEngine"]);
 	}
 
 	void Runtime::LoadAssembly(const std::string& name, const std::string& path)
@@ -87,6 +87,6 @@ namespace Scripting
 
 	void Runtime::BindScript(const std::string& assembly, ScriptInstance& script, Core::Transform* transform)
 	{
-		script.Bind(_domain, _assemblies[assembly], transform);
+		script.Bind(this, _assemblies[assembly], transform);
 	}
 }
