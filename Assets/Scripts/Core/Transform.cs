@@ -17,7 +17,7 @@ namespace NoEngine
 
     public struct Transform
     {
-        private IntPtr _nativeHandle = 0;
+        private IntPtr _nativeHandle;
 
         public void SetPosition(Vector3 position)
         {
@@ -30,9 +30,9 @@ namespace NoEngine
         }
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        extern public static void SetPosition(IntPtr handle, Vector3 position);
+        extern private static void SetPosition(IntPtr handle, Vector3 position);
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        extern public static Vector3 GetPosition(IntPtr handle);
+        extern private static Vector3 GetPosition(IntPtr handle);
     }
 }

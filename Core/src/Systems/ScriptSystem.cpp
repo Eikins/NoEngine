@@ -36,6 +36,8 @@ namespace Core
 			"Scripts/Core/Transform.cs",
 			"Scripts/Core/Time.cs",
 			"Scripts/Core/Script.cs",
+			"Scripts/Core/Material.cs",
+			"Scripts/Core/Components/Component.cs",
 			"Scripts/Core/Components/Renderer.cs"
 		};
 
@@ -46,6 +48,11 @@ namespace Core
 
 		_runtime.Compile("CompiledScripts/NoEngine.dll", args);
 		_runtime.LoadNoEngineAssembly("CompiledScripts/NoEngine.dll");
+
+		_runtime.RegisterInternalCall("NoEngine.Script::GetComponentHandle", Scripting::ScriptInstance::Script_GetComponentHandle);
+
+		_runtime.RegisterInternalCall("NoEngine.Renderer::GetMaterial", Scripting::ScriptInstance::Script_GetMaterial);
+		_runtime.RegisterInternalCall("NoEngine.Material::SetColor", Scripting::ScriptInstance::Script_SetColor);
 
 		_runtime.RegisterInternalCall("NoEngine.Transform::SetPosition", Scripting::ScriptInstance::Script_SetPosition);
 		_runtime.RegisterInternalCall("NoEngine.Transform::GetPosition", Scripting::ScriptInstance::Script_GetPosition);
@@ -78,7 +85,16 @@ namespace Core
 		}
 	}
 
-	void ScriptSystem::Update()
+	void ScriptSystem::ScriptInit()
+	{
+		auto& scriptBehaviours = _gameManager->GetAllComponents<ScriptedBehaviour>();
+		for (auto& behaviour : scriptBehaviours)
+		{
+			behaviour.Init();
+		}
+	}
+
+	void ScriptSystem::ScriptUpdate()
 	{
 		_runtime.GetEnvironment().SetTime(Time::time, Time::deltaTime);
 		auto& scriptBehaviours = _gameManager->GetAllComponents<ScriptedBehaviour>();

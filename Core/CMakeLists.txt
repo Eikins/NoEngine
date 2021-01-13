@@ -44,7 +44,7 @@ add_executable (NoEngine
 	"src/Systems/GraphicsSystem.cpp" 
 	"include/Core/Components/Light.h" 
 	"src/Time.cpp"
-	"src/Input/InputMaster.cpp" "include/Core/Systems/ScriptSystem.h" "src/Systems/ScriptSystem.cpp" "NoEngine.cpp")
+	"src/Input/InputMaster.cpp" "include/Core/Systems/ScriptSystem.h" "src/Systems/ScriptSystem.cpp" "NoEngine.cpp" "src/Modules/ComponentManager.cpp")
 
 add_dependencies(NoEngine Math)
 add_dependencies(NoEngine Graphics)

@@ -18,6 +18,8 @@ namespace Core
 		ScriptedBehaviour(GameObject* gameObject) : Component(gameObject) {}
 
 		inline Scripting::ScriptInstance& GetInstance() { return _instance; }
+
+		void Init();
 		void Update();
 	};
 }

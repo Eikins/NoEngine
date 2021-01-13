@@ -24,7 +24,9 @@ namespace Core
 		void Reload();
 		void CompileAndLoadCore();
 		void CompileAndLoadScripts();
-		void Update();
+
+		void ScriptInit();
+		void ScriptUpdate();
 
 	};
 }

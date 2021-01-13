@@ -3,6 +3,8 @@
 #include <mono/metadata/assembly.h>
 #include <mono/metadata/attrdefs.h>
 
+#include "Core/Modules/GameManager.hpp"
+
 #include "Core/Transform.h"
 
 namespace Scripting
@@ -23,13 +25,18 @@ namespace Scripting
 		auto scriptClass = mono_class_from_name(image, _namespace.c_str(), _name.c_str());
 		_scriptObj = mono_object_new(domain, scriptClass);
 
-		// Get fields and set script transform field to created transform
-		auto transformField = mono_class_get_field_from_name(scriptClass, "_transform");
-		mono_field_set_value(_scriptObj, transformField, &transform);
-
 		// Get update func
+		auto monoInit = mono_class_get_method_from_name(scriptClass, "Init", 0);
 		auto monoUpdate = mono_class_get_method_from_name(scriptClass, "Update", 0);
-		_updateMethodPtr = mono_method_get_unmanaged_thunk(monoUpdate);
+		if (monoInit != nullptr)
+		{
+			_initMethodPtr = mono_method_get_unmanaged_thunk(monoInit);
+		}
+
+		if (monoUpdate != nullptr)
+		{
+			_updateMethodPtr = mono_method_get_unmanaged_thunk(monoUpdate);
+		}
 
 		_publicFields.size();
 
@@ -48,13 +55,24 @@ namespace Scripting
 			}
 		}
 		mono_runtime_object_init(_scriptObj);
+
+		// Get fields and set script transform field to created transform
+		auto transformField = mono_class_get_field_from_name(scriptClass, "_transform");
+		mono_field_set_value(_scriptObj, transformField, &transform);
+	}
+
+	void ScriptInstance::Init()
+	{
+		if (_initMethodPtr == nullptr) return;
+		MonoException* exception = nullptr;
+		reinterpret_cast<MonoVoidMethod>(_initMethodPtr)(_scriptObj, &exception);
 	}
 
 	void ScriptInstance::Update()
 	{
 		if (_updateMethodPtr == nullptr) return;
 		MonoException* exception = nullptr;
-		reinterpret_cast<UpdateMethod>(_updateMethodPtr)(_scriptObj, &exception);
+		reinterpret_cast<MonoVoidMethod>(_updateMethodPtr)(_scriptObj, &exception);
 	}
 #pragma endregion
 
@@ -67,6 +85,25 @@ namespace Scripting
 	Math::Vector3 ScriptInstance::Script_GetPosition(Core::Transform* transform)
 	{
 		return transform->GetPosition();
+	}
+
+	Core::Component* ScriptInstance::Script_GetComponentHandle(Core::Transform* transform, int type)
+	{
+		auto ptr = static_cast<Core::Component*>(
+			Core::GameManager::Get()->GetComponentRaw(transform->GetGameObject(), type)
+		);
+		return ptr;
+	}
+
+	Core::Material* ScriptInstance::Script_GetMaterial(Core::Renderer* renderer)
+	{
+		return renderer->material;
+	}
+
+	void ScriptInstance::Script_SetColor(Core::Material* material, MonoString* str, Math::Vector4 color)
+	{
+		auto& name = std::string(mono_string_to_utf8(str));
+		material->GetPropertyBlock().SetVector(name, color);
 	}
 #pragma endregion
 

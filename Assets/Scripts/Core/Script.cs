@@ -1,20 +1,30 @@
+using System.Runtime.CompilerServices;
 using System;
+using System.Collections.Generic;
 
 namespace NoEngine
 {
     public class Script
     {
-        private Transform _transform;
+        static readonly Dictionary<Type, int> ComponentNativeType = new Dictionary<Type, int>()
+        {
+            { typeof(Renderer), 1 }
+        };
+
+        private Transform _transform = default;
 
         protected Transform transform
         {
             get { return _transform; }
         }
 
-        protected T GetComponent<T>()
+        protected T GetComponent<T>() where T : Component
         {
-            Console.WriteLine("C# name : " + typeof(T).Name);
-            return null;
+            var handle = GetComponentHandle(_transform, ComponentNativeType[typeof(T)]);
+            return handle.ToInt32() == 0 ? null : Activator.CreateInstance(typeof(T), handle) as T;
         }
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        extern private static IntPtr GetComponentHandle(Transform transform, int type);
     }
 }

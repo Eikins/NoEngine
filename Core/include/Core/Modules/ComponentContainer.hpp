@@ -14,6 +14,7 @@ namespace Core
 	{
 	public:
 		virtual void RemoveSafe(GameObject* gameObject) = 0;
+		virtual void* GetRaw(GameObject* gameObject) = 0;
 	};
 
 	template<typename T>
@@ -70,6 +71,13 @@ namespace Core
 			{
 				RemoveUnsafe(gameObject);
 			}
+		}
+
+		virtual void* GetRaw(GameObject* gameObject) override
+		{
+			auto& it = _gameObjectToIndex.find(gameObject);
+			if (it == _gameObjectToIndex.end()) return nullptr;
+			else return &_elements[it->second];
 		}
 
 		// Get the component of a given gameobject

@@ -1,26 +1,36 @@
 using NoEngine;
-using System;
-
-using System.Runtime.InteropServices;
 
 namespace Scripts
 {
     public class SinWave : Script
     {
+        // Exposed Fields
         public float magnitude = 1.0f;
         public float speed = 1.0f;
 
+        // Cache
+        private Renderer _renderer;
+        private Material _material;
+
+        // Called before the first Update
+        void Init()
+        {
+            _renderer = GetComponent<Renderer>();
+            _material = _renderer.GetMaterial();
+        }
+
+        // Called each frame
         void Update()
         {
-            GetComponent<Renderer>();
+            float sint = (float)Math.Sin((double)speed * Time.time);
+
+            // Update Position
             var position = transform.GetPosition();
-            // Console.WriteLine("Allo");
-            Console.WriteLine(position.x + ", " + position.y + ", " + position.z);
-            float t = magnitude * (float)Math.Sin((double)speed * Time.time);
-            transform.SetPosition(new Vector3(
-                t,
-                t,
-                0));
+            position.x = magnitude * sint;
+            transform.SetPosition(position);
+
+            // Update material properties
+            _material.SetColor("Color", new Color(0.2f, 0.2f, 0.5f + 0.3f * sint, 0f));
         }
     }
 }

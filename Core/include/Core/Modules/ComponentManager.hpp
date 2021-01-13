@@ -14,6 +14,7 @@ namespace Core
 	private:
 		std::unordered_map<const char*, ComponentType> _componentTypes;
 		std::unordered_map<const char*, AbstractComponentContainer*> _componentContainers;
+		std::unordered_map<ComponentType, AbstractComponentContainer*> _componentContainersFromType;
 		ComponentType _nextAvailableType;
 
 		template<typename T>
@@ -32,7 +33,9 @@ namespace Core
 			assert(_componentTypes.find(typeName) == _componentTypes.end() && "Component already registered.");
 
 			_componentTypes.insert({ typeName, _nextAvailableType });
-			_componentContainers.insert({ typeName, new ComponentContainer<T>() });
+			auto container = new ComponentContainer<T>();
+			_componentContainers.insert({ typeName, container });
+			_componentContainersFromType.insert({ _nextAvailableType, container });
 			_nextAvailableType++;
 		}
 
@@ -62,6 +65,8 @@ namespace Core
 		{
 			return GetContainer<T>()->Get(gameObject);
 		}
+
+		void* GetComponentRaw(GameObject* gameObject, ComponentType type);
 
 		template<typename T>
 		std::vector<T>& GetAllComponents()

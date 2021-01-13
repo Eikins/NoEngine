@@ -51,12 +51,13 @@ namespace Core
     public:
         ~Transform();
 
+        inline GameObject* GetGameObject() { return _gameObject; }
+
         void ForceUpdate();
         
         // Hierarchy
         // TODO: Adapt scene to support parental modifications
         void SetParent(Transform* parent);
-    public:
         void AddChild(Transform* child);
         void RemoveChild(Transform* child);
 

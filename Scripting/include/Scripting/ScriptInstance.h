@@ -5,6 +5,9 @@
 
 #include "Core/Transform.h"
 #include "Math/Math.h"
+#include "Core/Components/Component.h"
+#include "Core/Components/Renderer.h"
+#include "Core/Assets/Material.h"
 
 namespace Core
 {
@@ -14,7 +17,7 @@ namespace Core
 
 namespace Scripting
 {
-	typedef void (*UpdateMethod)(MonoObject *object, MonoException** exception);
+	typedef void (*MonoVoidMethod)(MonoObject *object, MonoException** exception);
 
 	enum class FieldType
 	{
@@ -36,6 +39,7 @@ namespace Scripting
 		friend class Core::ScriptSystem;
 	private:
 		MonoObject* _scriptObj = nullptr;
+		void* _initMethodPtr = nullptr;
 		void* _updateMethodPtr = nullptr;
 		std::string _namespace;
 		std::string _name;
@@ -46,6 +50,7 @@ namespace Scripting
 	public:
 		void SetName(const std::string& namespc, const std::string& name);
 
+		void Init();
 		void Update();
 
 		inline std::vector<FieldInfo>& GetPublicFields() { return _publicFields; }
@@ -66,7 +71,10 @@ namespace Scripting
 	private:
 #pragma region Internal Calls
 		static void Script_SetPosition(Core::Transform* transform, Math::Vector3 position);
-		static Math::Vector3 ScriptInstance::Script_GetPosition(Core::Transform* transform);
+		static Math::Vector3 Script_GetPosition(Core::Transform* transform);
+		static Core::Component* Script_GetComponentHandle(Core::Transform*, int type);
+		static Core::Material* Script_GetMaterial(Core::Renderer* renderer);
+		static void Script_SetColor(Core::Material* material, MonoString* str, Math::Vector4 color);
 #pragma endregion
 
 	};

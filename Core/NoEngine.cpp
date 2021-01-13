@@ -133,7 +133,7 @@ public:
 
         auto& clownfishRenderer = _gameManager.AddComponent<Renderer>(clownfishObject);
         auto& clownfishAABB = _gameManager.AddComponent<AABBCollider>(clownfishObject);
-        _gameManager.AddComponent<Rigidbody>(clownfishObject);
+        //_gameManager.AddComponent<Rigidbody>(clownfishObject);
         clownfishRenderer.mesh = &clownfishMeshes[0];
         clownfishRenderer.material = &clownfishMaterial;
         clownfishAABB.bounds = Bounds(Vector3::Zero, Vector3::One * 5);
@@ -148,14 +148,15 @@ public:
         barracudaRenderer.material = &barracudaMaterial;
         barracudaAABB.bounds = Bounds(Vector3(0, 0.7f, 0), Vector3(10, 2, 1));
 
-        auto& barracudaScript = _gameManager.AddComponent<ScriptedBehaviour>(barracudaObject);
-        barracudaScript.script = &sinWaveScript;
+        auto& clownfishScript = _gameManager.AddComponent<ScriptedBehaviour>(clownfishObject);
+        clownfishScript.script = &sinWaveScript;
 
         // Set Transforms
         emptyObject->GetTransform()->SetScale(Vector3::One * 0.2f);
         cameraObject->GetTransform()->SetPosition(Vector3(0, 0, -10));
         clownfishObject->GetTransform()->SetPosition(Vector3(-5, 0, 0));
-        clownfishObject->GetTransform()->SetScale(Vector3::One * 0.15f);
+        clownfishObject->GetTransform()->SetScale(Vector3::One * 0.5f);
+        barracudaObject->GetTransform()->SetScale(Vector3::One * 0.2f);
         groundObject->GetTransform()->SetPosition(Vector3(0, -10, 0));
 
         _gameManager.SetScene(&scene);
@@ -185,13 +186,15 @@ public:
             Time::deltaTime = 1.0f / 60.0f;
             std::chrono::steady_clock::time_point lastFrameTimePoint = Chrono::now();
 
+            _scripts->ScriptInit();
+
             while (window.ShouldClose() == false)
             {
                 window.PollEvents();
                 if (_graphics->RenderAsync(&mainCamera))
                 {
                     _physics->Integrate(Time::deltaTime);
-                    _scripts->Update();
+                    _scripts->ScriptUpdate();
                     _graphics->WaitForRenderCompletion();
                 }
 

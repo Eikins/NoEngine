@@ -11,12 +11,15 @@ namespace Core
 	class GameManager
 	{
 	private:
+		static GameManager* _instance;
 		std::unique_ptr<ComponentManager> _componentManager;
 		std::unique_ptr<GameObjectManager> _gameObjectManager;
 		std::unique_ptr<SystemManager> _systemManager;
 
 		Scene* _scene;
 	public:
+		static GameManager* Get();
+
 		void Init();
 		GameObject* CreateGameObject(const std::string& name, Transform* parent = nullptr);
 		void DestroyGameObject(GameObject* gameObject);
@@ -75,6 +78,8 @@ namespace Core
 		{
 			return _componentManager->GetComponent<T>(gameObject);
 		}
+
+		void* GetComponentRaw(GameObject* gameObject, ComponentType type);
 
 		template<typename T>
 		ComponentType GetComponentType()
