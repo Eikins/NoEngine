@@ -7,7 +7,7 @@ namespace Scripts
     {
         // Exposed Property
         public float movementSpeed = 5.0f;
-        public float rotateSpeed = 90.0f;
+        public float rotateSpeed = 15.0f;
 
         private bool _enabled = false;
         private Vector3 _movementInput = Vector3.Zero;

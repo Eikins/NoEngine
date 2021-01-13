@@ -48,6 +48,8 @@ class NoEngine
 
     InputMaster _inputMaster;
 
+    Camera* _mainCamera = nullptr;
+
     void RegisterComponents()
     {
         _gameManager.RegisterComponent<Camera>();
@@ -84,9 +86,7 @@ public:
 
     int Run()
     {
-        // Load Scene
-        Scene scene("Example Scene");
-
+        // ========================== LOAD ASSETS ==========================
         // Meshes
         auto barracudaMeshes = Mesh::LoadFromFile("Models/Barracuda/Barracuda_Model.fbx");
         auto clownfishMeshes = Mesh::LoadFromFile("Models/Clownfish/Clownfish_Model.fbx");
@@ -101,75 +101,109 @@ public:
         RenderStateBlock renderStateBlock = RenderStateBlock::DefaultOpaque;
         //renderStateBlock.depthTestEnabled = false;
         Material clownfishMaterial("Clownfish", &standardVertexShader, &clownfishFragmentShader, renderStateBlock,
-        {
-            {"Color", MaterialPropertyType::COLOR},
-            {"IndirectColor", MaterialPropertyType::COLOR}
-        });
+            {
+                {"Color", MaterialPropertyType::COLOR},
+                {"IndirectColor", MaterialPropertyType::COLOR}
+            });
         clownfishMaterial.GetPropertyBlock().SetVector("Color", Math::Vector4(0.2, 0.2, 0.8, 1.0));
         clownfishMaterial.GetPropertyBlock().SetVector("IndirectColor", Math::Vector4(0.05, 0.05, 0.15, 1.0));
 
+        // Scripts
         Script sinWaveScript("SinWave", "Scripts/SinWave.cs");
         Script rotatorScript("Rotator", "Scripts/Rotator.cs");
         Script colorChangerScript("ColorChanger", "Scripts/ColorChanger.cs");
         Script cameraControllerScript("CameraController", "Scripts/CameraController.cs");
 
-        // Create Game Objects
-        GameObject* cameraObject = _gameManager.CreateGameObject("Main Camera");
-        GameObject* mainLightObject = _gameManager.CreateGameObject("Main Light");
-        GameObject* emptyObject = _gameManager.CreateGameObject("Empty");
-        GameObject* barracudaObject = _gameManager.CreateGameObject("Barracuda");
-        GameObject* clownfishObject = _gameManager.CreateGameObject("Clownfish");
-        GameObject* groundObject = _gameManager.CreateGameObject("Ground");
+        // Scene
+        Scene scene("Example Scene");
+        // ========================== Create Game Objects ==========================
+        GameObject* camera = _gameManager.CreateGameObject("Main Camera");
+        GameObject* mainLight = _gameManager.CreateGameObject("Main Light");
+        GameObject* empty = _gameManager.CreateGameObject("Empty");
+            GameObject* barracuda = _gameManager.CreateGameObject("Barracuda", empty->GetTransform());
+        GameObject* clownfish = _gameManager.CreateGameObject("Clownfish");
+            GameObject* clownfishChild1 = _gameManager.CreateGameObject("Clownfish Child", clownfish->GetTransform());
+            GameObject* clownfishChild2 = _gameManager.CreateGameObject("Clownfish Child", clownfish->GetTransform());
+        GameObject* ground = _gameManager.CreateGameObject("Ground");
+            GameObject* upperGround = _gameManager.CreateGameObject("Upper Ground", ground->GetTransform());
+            GameObject* lowerGround = _gameManager.CreateGameObject("Lower Ground", ground->GetTransform());
+                GameObject* abyss = _gameManager.CreateGameObject("Abyss", lowerGround->GetTransform());
 
-        scene.rootTransforms.push_back(cameraObject->GetTransform());
-        scene.rootTransforms.push_back(mainLightObject->GetTransform());
-        scene.rootTransforms.push_back(emptyObject->GetTransform());
-        scene.rootTransforms.push_back(barracudaObject->GetTransform());
-        scene.rootTransforms.push_back(clownfishObject->GetTransform());
-        scene.rootTransforms.push_back(groundObject->GetTransform());
+        // TODDO : Automatize
+        scene.rootTransforms.push_back(camera->GetTransform());
+        scene.rootTransforms.push_back(mainLight->GetTransform());
+        scene.rootTransforms.push_back(empty->GetTransform());
+        scene.rootTransforms.push_back(clownfish->GetTransform());
+        scene.rootTransforms.push_back(ground->GetTransform());
 
-        // Components
-        Camera& mainCamera = _gameManager.AddComponent<Camera>(cameraObject);
-        auto& cameraScriptBehaviour = _gameManager.AddComponent<ScriptedBehaviour>(cameraObject);
+        // Main Camera Components
+        Camera& mainCamera = _gameManager.AddComponent<Camera>(camera);
+        auto& cameraScriptBehaviour = _gameManager.AddComponent<ScriptedBehaviour>(camera);
         cameraScriptBehaviour.AddScript(&cameraControllerScript);
         _inputMaster.RegisterEventReceiver(&cameraScriptBehaviour.GetInstances()[0]);
 
-        auto& light = _gameManager.AddComponent<Light>(mainLightObject);
+        // Main Light Components
+        auto& light = _gameManager.AddComponent<Light>(mainLight);
         light._type = LightType::DIRECTIONAL;
 
-        auto& clownfishRenderer = _gameManager.AddComponent<Renderer>(clownfishObject);
-        auto& clownfishAABB = _gameManager.AddComponent<AABBCollider>(clownfishObject);
-        //_gameManager.AddComponent<Rigidbody>(clownfishObject);
-        clownfishRenderer.mesh = &clownfishMeshes[0];
-        clownfishRenderer.material = &clownfishMaterial;
-        clownfishAABB.bounds = Bounds(Vector3::Zero, Vector3::One * 5);
-
-        auto& groundAABB = _gameManager.AddComponent<AABBCollider>(groundObject);
-        groundAABB.bounds = Bounds(Vector3::Zero, Vector3(20, 2, 20));
-
-        auto& barracudaRenderer = _gameManager.AddComponent<Renderer>(barracudaObject);
-        auto& barracudaAABB = _gameManager.AddComponent<AABBCollider>(barracudaObject);
-        auto& barracudaRb = _gameManager.AddComponent<Rigidbody>(barracudaObject);
+        // Barracuda
+        auto& barracudaRenderer = _gameManager.AddComponent<Renderer>(barracuda);
+        auto& barracudaAABB = _gameManager.AddComponent<AABBCollider>(barracuda);
+        auto& barracudaRb = _gameManager.AddComponent<Rigidbody>(barracuda);
         barracudaRenderer.mesh = &barracudaMeshes[0];
         barracudaRenderer.material = &barracudaMaterial;
         barracudaAABB.bounds = Bounds(Vector3(0, 0.7f, 0), Vector3(10, 2, 1));
-
-        auto& clownfishScript = _gameManager.AddComponent<ScriptedBehaviour>(clownfishObject);
-        clownfishScript.AddScript(&colorChangerScript);
-        clownfishScript.AddScript(&rotatorScript);
-
-        auto& barracudaScript = _gameManager.AddComponent<ScriptedBehaviour>(barracudaObject);
-        barracudaScript.AddScript(&rotatorScript);
+        auto& barracudaScript = _gameManager.AddComponent<ScriptedBehaviour>(barracuda);
         barracudaScript.AddScript(&sinWaveScript);
 
-        // Set Transforms
-        emptyObject->GetTransform()->SetScale(Vector3::One * 0.2f);
-        cameraObject->GetTransform()->SetPosition(Vector3(0, 0, -10));
-        clownfishObject->GetTransform()->SetPosition(Vector3(-5, 0, 0));
-        clownfishObject->GetTransform()->SetScale(Vector3::One * 0.5f);
-        barracudaObject->GetTransform()->SetScale(Vector3::One * 0.2f);
-        groundObject->GetTransform()->SetPosition(Vector3(0, -10, 0));
+        // Clownfish & childs
+        auto& clownfishRenderer = _gameManager.AddComponent<Renderer>(clownfish);
+        auto& clownfishAABB = _gameManager.AddComponent<AABBCollider>(clownfish);
+        auto& clownfishBehaviour = _gameManager.AddComponent<ScriptedBehaviour>(clownfish);
+        clownfishRenderer.mesh = &clownfishMeshes[0];
+        clownfishRenderer.material = &clownfishMaterial;
+        clownfishAABB.bounds = Bounds(Vector3::Zero, Vector3::One * 5);
+        clownfishBehaviour.AddScript(&colorChangerScript);
+        clownfishBehaviour.AddScript(&rotatorScript);
 
+        auto& clownfishChild1Renderer = _gameManager.AddComponent<Renderer>(clownfishChild1);
+        auto& clownfishChild2Renderer = _gameManager.AddComponent<Renderer>(clownfishChild2);
+        auto& clownfishChild1Behaviour = _gameManager.AddComponent<ScriptedBehaviour>(clownfishChild1);
+        auto& clownfishChild2Behaviour = _gameManager.AddComponent<ScriptedBehaviour>(clownfishChild2);
+        auto& clownfishChild2AABB = _gameManager.AddComponent<AABBCollider>(clownfishChild2);
+        clownfishChild1Renderer.mesh = &clownfishMeshes[0];
+        clownfishChild1Renderer.material = &clownfishMaterial;
+        clownfishChild2Renderer.mesh = &clownfishMeshes[0];
+        clownfishChild2Renderer.material = &clownfishMaterial;
+        clownfishChild1Behaviour.AddScript(&rotatorScript);
+        clownfishChild2Behaviour.AddScript(&sinWaveScript);
+        clownfishChild2AABB.bounds = Bounds(Vector3::Zero, Vector3::One * 5);
+
+        // Ground
+        auto& upperGroundAABB = _gameManager.AddComponent<AABBCollider>(upperGround);
+        auto& lowerGroundAABB = _gameManager.AddComponent<AABBCollider>(lowerGround);
+        upperGroundAABB.bounds = Bounds(Vector3::Zero, Vector3(20, 2, 20));
+        lowerGroundAABB.bounds = Bounds(Vector3::Zero, Vector3(40, 2, 20));
+
+        // Set Transforms
+        camera->GetTransform()->SetPosition(Vector3(0, 0, -10));
+
+        barracuda->GetTransform()->SetScale(Vector3::One * 0.2f);
+        barracuda->GetTransform()->SetPosition(Vector3::Up * 10.0f);
+
+        clownfish->GetTransform()->SetPosition(Vector3(-5, 0, 0));
+        clownfish->GetTransform()->SetScale(Vector3::One * 0.5f);
+            clownfishChild1->GetTransform()->SetPosition(Vector3(0, 0, 10));
+            clownfishChild1->GetTransform()->SetScale(Vector3::One * 0.2f);
+            clownfishChild2->GetTransform()->SetPosition(Vector3(-4, 1, -3));
+            clownfishChild2->GetTransform()->SetScale(Vector3::One * 0.4f);
+
+        ground->GetTransform()->SetPosition(Vector3(0, -10, 0));
+            upperGround->GetTransform()->SetPosition(Vector3(-20, -10, 0));
+            lowerGround->GetTransform()->SetPosition(Vector3(0, -10, 0));
+            abyss->GetTransform()->SetPosition(Vector3(0, -100, 0));
+
+        _mainCamera = &mainCamera;
         _gameManager.SetScene(&scene);
 
 #ifdef NoEngine_Editor
@@ -187,7 +221,7 @@ public:
             windowDescriptor.height = 1080;
             windowDescriptor.resizable = true;
             windowDescriptor.title = "Vulkan Application";
-            mainCamera.SetAspectRatio(static_cast<float>(windowDescriptor.width) / windowDescriptor.height);
+            _mainCamera->SetAspectRatio(static_cast<float>(windowDescriptor.width) / windowDescriptor.height);
 
             _graphics->CreateContext(windowDescriptor);
             _graphics->BindInputMaster(&_inputMaster);
@@ -202,7 +236,7 @@ public:
             while (window.ShouldClose() == false)
             {
                 window.PollEvents();
-                if (_graphics->RenderAsync(&mainCamera))
+                if (_graphics->RenderAsync(_mainCamera))
                 {
                     _physics->Integrate(Time::deltaTime);
                     _scripts->ScriptUpdate();
