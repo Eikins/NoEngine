@@ -18,16 +18,15 @@
 #include "Core/Systems/ScriptSystem.h"
 
 #include "Core/Assets/Mesh.h"
+#include "Core/Time.h"
+#include "Core/Modules/GameManager.hpp"
+
 #include "Graphics/GraphicsContext.h"
 
 #ifdef NoEngine_Editor
 #include "Editor/Editor.h"
 #include "imgui.h"
 #endif
-
-#include "Core/Time.h"
-
-#include "Core/Modules/GameManager.hpp"
 
 using namespace std;
 using namespace Graphics;
@@ -40,6 +39,8 @@ typedef std::chrono::duration<float> fsec;
 
 class NoEngine
 {
+    const float MAX_DELTA_TIME = 1.0f / 15.0f;
+
     GameManager _gameManager;
     PhysicsSystem* _physics = nullptr;
     CollisionSystem* _collisionWorld = nullptr;
@@ -200,7 +201,7 @@ public:
 
         ground->GetTransform()->SetPosition(Vector3(0, -10, 0));
             upperGround->GetTransform()->SetPosition(Vector3(-20, -10, 0));
-            lowerGround->GetTransform()->SetPosition(Vector3(0, -10, 0));
+            lowerGround->GetTransform()->SetPosition(Vector3(0, -20, 0));
             abyss->GetTransform()->SetPosition(Vector3(0, -100, 0));
 
         _mainCamera = &mainCamera;
@@ -254,6 +255,10 @@ public:
                     long sleepDuration = ((1.0f / 60.0f) - Time::deltaTime) * 1000000000;
                     std::this_thread::sleep_for(std::chrono::nanoseconds(sleepDuration));
                     Time::deltaTime = 1.0f / 60.0f;
+                }
+                else if (Time::deltaTime > MAX_DELTA_TIME)
+                {
+                    Time::deltaTime = MAX_DELTA_TIME;
                 }
 
                 Time::time += Time::deltaTime * Time::timeScale;
