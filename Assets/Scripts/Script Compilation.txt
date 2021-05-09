@@ -1,0 +1,2 @@
+On G14:
+"C:\Program Files (x86)\Mono\bin\mcs" Source\Dog.cs -target:library -out:Compiled/Dog.dll

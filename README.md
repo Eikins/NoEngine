@@ -81,7 +81,35 @@ This section should list any major frameworks that you built your project using.
 <!-- GETTING STARTED -->
 ## Getting Started
 
-*TODO*
+### Install
+
+To compile the project, you need [vcpkg](https://github.com/microsoft/vcpkg).
+You will need to get packages :
+* Vulkan
+* OpenGL
+* glew
+* glfw
+* glm
+* Assimp
+
+You will need to install the [mono runtime](https://www.mono-project.com/download/stable/) (mandatory),
+and compile mono.
+Then, in the main CMakeLists, you need to replace the paths to your corresponding ones
+```CMake
+# =================== Set user specific variables here ======================
+# TODO : try to find a better approach (using env variables)
+
+# vcpkg tooclchain
+set(CMAKE_TOOLCHAIN_FILE "D:/Dev/Tools/vcpkg/scripts/buildsystems/vcpkg.cmake")
+
+# MoONO
+# Library path
+set(MONO_LIBRARY_PATH "D:/Dev/SDKs/Mono/msvc/build/sgen/x64/lib/Release")
+set(MONO_BINARY_PATH "D:/Dev/SDKs/Mono/msvc/build/sgen/x64/bin/Release")
+# Runtime location
+set(MONO_INSTALL_FOLDER "C:/Program\ Files\ (x86)/Mono")
+#============================================================================
+```
 
 <!-- USAGE EXAMPLES -->
 ## Usage
